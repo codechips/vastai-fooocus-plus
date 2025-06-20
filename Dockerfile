@@ -109,7 +109,6 @@ RUN uv venv --seed --python 3.10 .venv && \
     find /opt/fooocus/.venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # Copy configuration files and scripts (frequently changing layer)
-COPY config/fooocus/ /etc/fooocus/
 COPY config/filebrowser/filebrowser.json /root/.filebrowser.json
 COPY scripts/start.sh /opt/bin/start.sh
 COPY scripts/services/ /opt/bin/services/
