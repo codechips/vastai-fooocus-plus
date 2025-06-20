@@ -76,22 +76,25 @@ WORKDIR /opt/fooocus
 RUN uv venv --seed --python 3.10 .venv && \
     # Activate the virtual environment
     . .venv/bin/activate && \
-    # Install base packages with uv pip (much faster than regular pip)
-    uv add "numpy<2.0.0" && \
-    # Install PyTorch (architecture-specific with pinned versions)
+    # Follow FooocusPlus installation pattern (based on Linux install script)
+    # 1. Install base tools with setuptools constraint
+    uv add "setuptools<70" wheel packaging && \
+    # 2. Install PyTorch (architecture-specific with pinned versions)
     if [ "$(uname -m)" = "x86_64" ]; then \
         uv add torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121; \
     else \
         uv add torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2; \
     fi && \
-    # Install Fooocus Plus-specific dependencies
+    # 3. Install core dependencies first (as per install script)
     uv add pygit2 torchruntime requests cmake && \
-    # Install Fooocus Plus requirements with uv pip
+    # 4. Install requirements_patch.txt first (critical for FooocusPlus)
     if [ -f requirements_patch.txt ]; then \
         uv add -r requirements_patch.txt; \
     fi && \
+    # 5. Install main requirements (but skip conflicting setuptools version)
     if [ -f requirements_versions.txt ]; then \
-        uv add -r requirements_versions.txt; \
+        grep -v "^setuptools==" requirements_versions.txt > /tmp/requirements_filtered.txt && \
+        uv add -r /tmp/requirements_filtered.txt; \
     elif [ -f requirements.txt ]; then \
         uv add -r requirements.txt; \
     fi && \

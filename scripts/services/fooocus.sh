@@ -6,10 +6,12 @@ source "$SCRIPT_DIR/utils.sh"
 
 function start_fooocus() {
     echo "fooocus: starting Fooocus Plus"
+    
+    # Activate the uv-created virtual environment first
+    source /opt/fooocus/.venv/bin/activate
+    
+    # Change to the Fooocus directory (required for proper operation)
     cd /opt/fooocus
-
-    # Activate the uv-created virtual environment
-    source .venv/bin/activate
 
     # Default Fooocus Plus arguments
     # Fooocus Plus uses port 7865 by default, we'll override to 8010 to match expected port
