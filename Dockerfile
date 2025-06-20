@@ -112,8 +112,7 @@ RUN uv venv --seed --python 3.10 .venv && \
 COPY config/filebrowser/filebrowser.json /root/.filebrowser.json
 COPY scripts/start.sh /opt/bin/start.sh
 COPY scripts/services/ /opt/bin/services/
-COPY scripts/provision.py /opt/provision/provision.py
-COPY src/ /opt/provision/src/
+COPY scripts/provision/ /opt/provision/
 
 # Configure filebrowser, set permissions, and final cleanup
 # hadolint ignore=SC2015
