@@ -1,0 +1,64 @@
+# Fooocus Plus Model Provisioning Configuration
+# 
+# This configuration file demonstrates how to provision models for Fooocus Plus.
+# You can specify models from HuggingFace, CivitAI, or direct URLs.
+#
+# Usage:
+# 1. Host this file on a web server, GitHub, or Google Drive
+# 2. Set PROVISION_URL environment variable to the file URL
+# 3. The container will automatically download configured models on startup
+#
+# Environment variables required for some models:
+# - HF_TOKEN: For gated HuggingFace models
+# - CIVITAI_TOKEN: For some CivitAI models
+
+# Checkpoint models (main Stable Diffusion models)
+[models.checkpoints]
+# Example SDXL model from HuggingFace
+sdxl-base = { source = "huggingface", repo = "stabilityai/stable-diffusion-xl-base-1.0", file = "sd_xl_base_1.0.safetensors" }
+
+# Example model from CivitAI
+# juggernaut-xl = { source = "civitai", model_id = "133005" }
+
+# Example direct URL download
+# custom-model = { source = "url", url = "https://example.com/model.safetensors", filename = "custom-model.safetensors" }
+
+# LoRA models (style/concept adaptations)
+[models.lora]
+# Example LoRA from CivitAI
+# detail-tweaker = { source = "civitai", model_id = "58390" }
+
+# VAE models (Variational Autoencoders)
+[models.vae]
+# SDXL VAE
+sdxl-vae = { source = "huggingface", repo = "madebyollin/sdxl-vae-fp16-fix", file = "sdxl_vae.safetensors" }
+
+# Text Encoders for FLUX models
+[models.text_encoder]
+# CLIP-L encoder
+clip_l = { source = "huggingface", repo = "comfyanonymous/flux_text_encoders", file = "clip_l.safetensors" }
+
+# T5 XXL encoder (FP8 quantized for lower VRAM)
+t5xxl_fp8 = { source = "huggingface", repo = "comfyanonymous/flux_text_encoders", file = "t5xxl_fp8_e4m3fn.safetensors" }
+
+# FLUX VAE (required for FLUX models)
+[models.vae.flux-vae]
+source = "huggingface"
+repo = "black-forest-labs/FLUX.1-dev"
+file = "ae.safetensors"
+gated = true  # Requires HF_TOKEN
+
+# Embeddings (textual inversions)
+[models.embeddings]
+# Example embedding
+# easynegative = "https://huggingface.co/datasets/gsdf/EasyNegative/resolve/main/EasyNegative.safetensors"
+
+# ControlNet models
+[models.controlnet]
+# Example ControlNet model
+# canny = { source = "huggingface", repo = "lllyasviel/ControlNet-v1-1", file = "control_v11p_sd15_canny.pth" }
+
+# Upscale models (ESRGAN)
+[models.upscale_models]
+# Example upscaler
+# 4x-ultrasharp = { source = "url", url = "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x-UltraSharp.pth" }

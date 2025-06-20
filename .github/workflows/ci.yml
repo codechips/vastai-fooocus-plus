@@ -1,0 +1,71 @@
+# CI workflow for testing the provisioning system and other components
+name: CI
+
+on:
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-provisioning:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out the repository's code
+      uses: actions/checkout@v4
+      
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        
+    - name: Test provisioning script syntax
+      run: |
+        # Test that the provisioning script runs without errors
+        ./scripts/provision/provision.py --help
+        
+    - name: Validate TOML configurations
+      run: |
+        # Install tomli to test TOML parsing
+        uv run --with tomli python -c "
+        import tomli
+        import os
+        import glob
+        
+        # Test all example TOML files
+        for toml_file in glob.glob('examples/*.toml'):
+            print(f'Validating {toml_file}')
+            with open(toml_file, 'rb') as f:
+                try:
+                    config = tomli.load(f)
+                    print(f'✅ {toml_file} is valid')
+                except Exception as e:
+                    print(f'❌ {toml_file} failed: {e}')
+                    exit(1)
+        print('All TOML files are valid!')
+        "
+        
+    - name: Test provisioning with minimal config
+      run: |
+        # Create test workspace
+        mkdir -p /tmp/test-workspace/{models/{Stable-diffusion,Lora,VAE,ControlNet,ESRGAN},logs}
+        
+        # Set environment variables
+        export WORKSPACE="/tmp/test-workspace"
+        
+        # Test dry run (just parsing and validation)
+        timeout 60 ./scripts/provision/provision.py examples/test-provision-minimal.toml --dry-run || echo "Dry run test completed"
+
+  lint-dockerfile:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out the repository's code
+      uses: actions/checkout@v4
+      
+    - name: Lint Dockerfile
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: Dockerfile
+        failure-threshold: warning

@@ -1,0 +1,29 @@
+# Cleanup workflow for managing Docker registry storage
+name: Cleanup
+
+on:
+  schedule:
+    # Run weekly on Sundays at 02:00 UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup-registry:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Delete old container images
+      uses: snok/container-retention-policy@v2
+      with:
+        image-names: vastai-fooocus-plus
+        cut-off: 30 days ago UTC
+        account-type: personal
+        org-name: ${{ github.repository_owner }}
+        keep-at-least: 5
+        untagged-only: false
+        skip-tags: latest
+        token: ${{ secrets.GITHUB_TOKEN }}

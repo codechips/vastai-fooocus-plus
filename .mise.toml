@@ -1,0 +1,231 @@
+[tasks.build]
+description = "Build the Fooocus Plus Docker image locally"
+run = [
+    "echo '🔥 Building Fooocus Plus image...'",
+    "docker build -t vastai-fooocus-plus:local .",
+    "echo '✅ Build completed successfully!'",
+    "echo ''",
+    "echo '🚀 To test the image run: mise run test'",
+    "echo '🧹 To clean up run: mise run clean'"
+]
+
+[tasks.test]
+description = "Run the Fooocus Plus image locally for testing"
+depends = ["build"]
+run = [
+    "echo '🚀 Starting Vast.ai Fooocus Plus container...'",
+    "docker run -d --name vastai-test -p 80:80 -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030 -e USERNAME=admin -e PASSWORD=admin vastai-fooocus-plus:local",
+    "echo ''",
+    "echo '🌐 Services will be available at:'",
+    "echo '  - Landing Page: http://localhost:80 (service directory)'",
+    "echo '  - Fooocus Plus: http://localhost:8010 (admin/admin)'",
+    "echo '  - File Manager: http://localhost:7010 (admin/admin)'",
+    "echo '  - Terminal: http://localhost:7020 (admin/admin)'",
+    "echo '  - Logs: http://localhost:7030'",
+    "echo ''",
+    "echo '📋 Useful commands:'",
+    "echo '  - Check status: docker ps'",
+    "echo '  - View logs: docker logs vastai-test'",
+    "echo '  - Shell access: docker exec -it vastai-test bash'",
+    "echo '  - Stop container: mise run stop'"
+]
+
+[tasks.stop]
+description = "Stop the test container"
+run = [
+    "echo '⏹️  Stopping test container...'",
+    "docker stop vastai-test || echo 'Container not running'",
+    "docker rm vastai-test || echo 'Container not found'"
+]
+
+[tasks.logs]
+description = "Show all logs from the test container"
+run = [
+    "docker logs -f vastai-test"
+]
+
+[tasks.logs-fooocus]
+description = "Show Fooocus Plus logs"
+run = [
+    "docker exec vastai-test tail -f /workspace/logs/fooocus.log || echo 'Fooocus Plus log not available yet'"
+]
+
+[tasks.logs-filebrowser]
+description = "Show Filebrowser logs"
+run = [
+    "docker exec vastai-test tail -f /workspace/logs/filebrowser.log || echo 'Filebrowser log not available yet'"
+]
+
+[tasks.shell]
+description = "Get a shell inside the test container"
+run = [
+    "docker exec -it vastai-test bash"
+]
+
+[tasks.status]
+description = "Check status of services in the test container"
+run = [
+    "echo '📊 Container status:'",
+    "docker ps --filter name=vastai-test",
+    "echo ''",
+    "echo '🔧 Service processes:'",
+    "docker exec vastai-test ps aux | grep -E '(python|filebrowser)' | grep -v grep || echo 'Container not running'"
+]
+
+[tasks.clean]
+description = "Clean up local images and test containers"
+run = [
+    "echo '🧹 Cleaning up...'",
+    "docker stop vastai-test 2>/dev/null || true",
+    "docker rm vastai-test 2>/dev/null || true",
+    "docker rmi vastai-fooocus-plus:local 2>/dev/null || true",
+    "echo '✅ Cleanup completed'"
+]
+
+[tasks.build-no-cache]
+description = "Build image without Docker cache (for debugging)"
+run = [
+    "echo '🔥 Building Fooocus Plus image (no cache)...'",
+    "docker build --no-cache -t vastai-fooocus-plus:local .",
+    "echo '✅ Build completed!'"
+]
+
+[tasks.test-services]
+description = "Test individual services with curl"
+run = [
+    "echo '🧪 Testing services...'",
+    "echo 'Testing Fooocus Plus health endpoint:'",
+    "curl -s -u admin:admin http://localhost:8010/health || echo 'Fooocus Plus not responding'",
+    "echo ''",
+    "echo 'Testing Filebrowser:'", 
+    "curl -s -u admin:admin -o /dev/null -w 'HTTP %{http_code}' http://localhost:7010 || echo 'Filebrowser not responding'",
+    "echo ''",
+    "echo 'Testing Logdy:'",
+    "curl -s -o /dev/null -w 'HTTP %{http_code}' http://localhost:7030 || echo 'Logdy not responding'",
+    "echo ''"
+]
+
+[tasks.dev]
+description = "Full development workflow: build, test, and show status"
+depends = ["build", "test"]
+run = [
+    "echo '⏳ Waiting for services to start...'",
+    "sleep 10",
+    "mise run status",
+    "echo ''",
+    "mise run test-services"
+]
+
+# GitHub Container Registry deployment tasks
+[tasks.setup-ghcr-auth]
+description = "Set up GitHub Container Registry authentication"
+run = [
+    "echo '🔐 Setting up GHCR authentication...'",
+    "echo '1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)'",
+    "echo '2. Generate new token with write:packages and read:packages permissions'",
+    "echo '3. Export token: export GITHUB_TOKEN=your_token_here'",
+    "echo '4. Run: mise run login-ghcr'"
+]
+
+[tasks.login-ghcr]
+description = "Login to GitHub Container Registry"
+run = [
+    "echo '🔑 Logging into GitHub Container Registry...'",
+    "echo $GITHUB_TOKEN | docker login ghcr.io -u codechips --password-stdin"
+]
+
+[tasks.build-prod]
+description = "Build production vastai-fooocus-plus Docker image for linux/amd64"
+run = [
+    "echo '🔥 Building production Fooocus Plus image for linux/amd64...'", 
+    "docker buildx create --use --name cross-builder --driver docker-container --driver-opt network=host || true",
+    "docker buildx build --platform linux/amd64 --progress=plain --load -t ghcr.io/codechips/vastai-fooocus-plus:latest .",
+    "echo '✅ Fooocus Plus image build completed!'",
+    "command -v afplay >/dev/null && afplay /System/Library/Sounds/Glass.aiff || echo '🔔'"
+]
+
+[tasks.build-prod-cached]
+description = "Build Fooocus Plus with caching (no version needed)"
+run = [
+    "echo '🔥 Building Fooocus Plus with caching...'",
+    "echo 'Building latest main branch...'",
+    "docker buildx create --use --name cross-builder --driver docker-container --driver-opt network=host || true",
+    "docker buildx build --platform linux/amd64 --progress=plain --load -t ghcr.io/codechips/vastai-fooocus-plus:latest .",
+    "echo '✅ Cached Fooocus Plus build completed!'",
+    "command -v afplay >/dev/null && afplay /System/Library/Sounds/Glass.aiff || echo '🔔'"
+]
+
+[tasks.push]
+description = "Push vastai-fooocus-plus image to GHCR"
+run = [
+    "echo '⬆️  Pushing Fooocus Plus image to GHCR...'", 
+    "docker push ghcr.io/codechips/vastai-fooocus-plus:latest"
+]
+depends = ["build-prod"]
+
+[tasks.deploy]
+description = "Complete deployment: build and push image to GHCR"
+depends = ["build-prod", "push"]
+run = [
+    "echo '🎉 Deployment completed successfully!'",
+    "echo ''",
+    "echo '📋 Image available at:'",
+    "echo '  - ghcr.io/codechips/vastai-fooocus-plus:latest'",
+    "echo ''",
+    "echo '🧪 Next steps:'",
+    "echo '  - Test on Vast.ai: mise run test-vastai'",
+    "echo '  - Verify image: mise run verify-image'",
+    "command -v afplay >/dev/null && afplay /System/Library/Sounds/Hero.aiff || echo '🎺'"
+]
+
+[tasks.verify-image]
+description = "Verify pushed image can be pulled"
+run = [
+    "echo '🔍 Verifying pushed image...'",
+    "docker pull ghcr.io/codechips/vastai-fooocus-plus:latest",
+    "echo '✅ Image verified successfully!'"
+]
+
+[tasks.test-vastai]
+description = "Instructions for testing on Vast.ai"
+run = [
+    "echo '🌐 Testing on Vast.ai:'",
+    "echo ''",
+    "echo '1. Go to https://vast.ai/'",
+    "echo '2. Create instance with image: ghcr.io/codechips/vastai-fooocus-plus:latest'",
+    "echo '3. Use SSH or Jupyter launch mode'",
+    "echo '4. Wait for services to start (~2-3 minutes)'",
+    "echo '5. Access Fooocus Plus on port 8010'",
+    "echo ''",
+    "echo '📋 Expected services:'",
+    "echo '  - Fooocus Plus: port 8010'",
+    "echo '  - File Manager: port 7010'", 
+    "echo '  - Terminal: port 7020'",
+    "echo '  - Logs: port 7030'"
+]
+
+# Debug tasks for hanging issues
+[tasks.debug-hanging]
+description = "Debug hanging build issues with timeout"
+run = [
+    "echo '🐛 Testing build with 10-minute timeout...'",
+    "timeout 600 docker buildx build --platform linux/amd64 --progress=plain -t test-hanging ./base || echo 'Build timed out or failed'"
+]
+
+
+[tasks.debug-build]
+description = "Debug Docker build process with verbose output"
+run = [
+    "echo '🔍 Starting debug build...'",
+    "echo 'Building with verbose output and progress indicators:'",
+    "DOCKER_BUILDKIT=0 docker build --progress=plain --no-cache -t debug-build:latest ."
+]
+
+[tasks.debug-timeout]
+description = "Debug hanging issues with timeouts"
+run = [
+    "echo '⏱️  Testing build with aggressive timeouts...'",
+    "timeout 3600 docker build --progress=plain -t timeout-test:latest . || echo 'Build timed out after 1 hour'",
+    "echo ''",
+    "echo 'Check Docker logs for hanging point:'"
+]

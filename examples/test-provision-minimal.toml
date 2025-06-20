@@ -1,0 +1,12 @@
+# Minimal test configuration for Fooocus Plus provisioning
+# 
+# This configuration contains small test files to validate the provisioning system
+# without downloading large models.
+
+[models.embeddings]
+# Small test embedding
+test-embedding = "https://huggingface.co/datasets/gsdf/EasyNegative/resolve/main/EasyNegative.safetensors"
+
+[models.vae]
+# Small VAE for testing
+test-vae = { source = "huggingface", repo = "madebyollin/sdxl-vae-fp16-fix", file = "sdxl_vae.safetensors" }
