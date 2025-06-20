@@ -40,6 +40,10 @@ RUN apt-get update && \
     libxrender-dev \
     libglib2.0-0 \
     libgomp1 \
+    # pygit2 dependencies
+    libgit2-1.1 \
+    libgit2-dev \
+    pkg-config \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     # Install uv (fastest Python package manager and environment manager)
@@ -100,8 +104,8 @@ RUN uv venv --seed --python 3.10 .venv && \
     else \
         echo "Skipping startup test on ARM architecture"; \
     fi && \
-    # Clean up build dependencies (keep uv for runtime)
-    apt-get remove -y build-essential && \
+    # Clean up unnecessary build dependencies (keep libgit2-1.1 for pygit2 runtime)
+    apt-get remove -y build-essential libgit2-dev pkg-config && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
