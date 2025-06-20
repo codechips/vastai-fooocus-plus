@@ -77,6 +77,11 @@ RUN uv venv --seed --python 3.10 .venv && \
     # Activate the virtual environment
     . .venv/bin/activate && \
     # Follow FooocusPlus installation pattern (based on Linux install script)
+    # Create minimal pyproject.toml for uv add to work
+    echo '[project]' > pyproject.toml && \
+    echo 'name = "fooocus-plus"' >> pyproject.toml && \
+    echo 'version = "1.0.0"' >> pyproject.toml && \
+    echo 'dependencies = []' >> pyproject.toml && \
     # 1. Install base tools with setuptools constraint
     uv add "setuptools<70" wheel packaging && \
     # 2. Install PyTorch (architecture-specific with pinned versions)
