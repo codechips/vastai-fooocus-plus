@@ -130,7 +130,7 @@ RUN mkdir -p /opt/bin /opt/provision && \
 
 # Set environment variables
 ENV USERNAME=admin \
-    PASSWORD=admin \
+    PASSWORD=fooocus \
     WORKSPACE=/workspace \
     FOOOCUS_ARGS="" \
     FOOOCUS_NO_AUTO_UPDATE="" \

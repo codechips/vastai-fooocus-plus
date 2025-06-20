@@ -22,9 +22,9 @@ Simplified single Docker image for running Fooocus Plus on Vast.ai with integrat
    Docker Image: ghcr.io/codechips/vastai-fooocus-plus:latest
    ```
 
-2. Configure environment variables:
+2. Configure environment variables and ports:
    ```bash
-   -e USERNAME=your_username -e PASSWORD=your_password -e OPEN_BUTTON_PORT=8010
+   -e USERNAME=admin -e PASSWORD=fooocus -e OPEN_BUTTON_PORT=80 -p 80:8000 -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030
    ```
 
    **Optional model provisioning** (see [Model Provisioning](#model-provisioning) section):
@@ -34,15 +34,11 @@ Simplified single Docker image for running Fooocus Plus on Vast.ai with integrat
    -e CIVITAI_TOKEN=your_civitai_token
    ```
 
-3. Map ports:
-   ```bash
-   -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030
-   ```
-
 4. Launch with "Entrypoint" mode for best compatibility
 
 ### Access Your Services
 
+- **Landing Page**: OPEN_BUTTON_PORT (nginx homepage with links to all services)
 - **Fooocus Plus**: Port 8010 (main interface, protected with Gradio auth)
 - **File Manager**: Port 7010 (manage models and outputs, protected with auth)
 - **Terminal**: Port 7020 (command line access, writable, protected with auth)
@@ -51,7 +47,7 @@ Simplified single Docker image for running Fooocus Plus on Vast.ai with integrat
 ## Default Credentials
 
 - Username: `admin`
-- Password: `admin`
+- Password: `fooocus`
 
 ## Model Provisioning
 
@@ -66,8 +62,8 @@ The container includes an automated model provisioning system that can download 
 | `HF_TOKEN` | HuggingFace API token for gated models | None | No |
 | `CIVITAI_TOKEN` | CivitAI API token for some models | None | No |
 | `USERNAME` | Authentication username for all services | `admin` | No |
-| `PASSWORD` | Authentication password for all services | `admin` | No |
-| `OPEN_BUTTON_PORT` | Port for Vast.ai "Open" button | `8010` | No |
+| `PASSWORD` | Authentication password for all services | `fooocus` | No |
+| `OPEN_BUTTON_PORT` | Port for Vast.ai "Open" button (nginx landing page) | `80` | No |
 | `FOOOCUS_ARGS` | Additional arguments for Fooocus Plus | Empty | No |
 | `FOOOCUS_NO_AUTO_UPDATE` | Disable auto-update on startup (set to "True" to disable) | Empty | No |
 | `NO_ACCELERATE` | Disable accelerate optimization (enabled by default) | Empty | No |
@@ -93,8 +89,8 @@ The container includes an automated model provisioning system that can download 
 3. **Launch container with provisioning**:
    ```bash
    docker run -d \
-     -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030 \
-     -e USERNAME=admin -e PASSWORD=admin \
+     -e USERNAME=admin -e PASSWORD=fooocus -e OPEN_BUTTON_PORT=80 \
+     -p 80:8000 -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030 \
      -e PROVISION_URL=https://drive.google.com/file/d/YOUR_FILE_ID/view \
      -e HF_TOKEN=hf_your_token_here \
      -e CIVITAI_TOKEN=your_civitai_token \
@@ -163,7 +159,7 @@ url = "https://drive.google.com/file/d/1ABC123DEF456/view?usp=sharing"
 filename = "custom-name.safetensors"
 
 # Direct Google Drive download (auto-converted)
-[models.lora.another-model]  
+[models.lora.another-model]
 source = "url"
 url = "https://drive.google.com/uc?id=1ABC123DEF456"
 ```
@@ -382,8 +378,8 @@ docker build -t vastai-fooocus-plus:local .
 
 # Run container
 docker run -d --name vastai-test \
-  -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030 \
-  -e USERNAME=admin -e PASSWORD=admin \
+  -e USERNAME=admin -e PASSWORD=fooocus -e OPEN_BUTTON_PORT=80 \
+  -p 80:8000 -p 8010:8010 -p 7010:7010 -p 7020:7020 -p 7030:7030 \
   vastai-fooocus-plus:local
 ```
 
