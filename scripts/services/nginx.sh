@@ -178,7 +178,5 @@ EOF
     echo "nginx: serving landing page at http://${EXTERNAL_IP}:80"
 }
 
-# Main execution if script is run directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    start_nginx
-fi
+# Note: Function is called explicitly from start.sh
+# No auto-execution when sourced to prevent duplicate processes

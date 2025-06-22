@@ -17,7 +17,5 @@ function start_filebrowser() {
     echo "filebrowser: log file at /workspace/logs/filebrowser.log"
 }
 
-# Main execution if script is run directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    start_filebrowser
-fi
+# Note: Function is called explicitly from start.sh
+# No auto-execution when sourced to prevent duplicate processes

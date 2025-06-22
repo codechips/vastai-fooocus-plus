@@ -10,7 +10,5 @@ function start_logdy() {
     echo "logdy: log file at /workspace/logs/logdy.log"
 }
 
-# Main execution if script is run directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    start_logdy
-fi
+# Note: Function is called explicitly from start.sh
+# No auto-execution when sourced to prevent duplicate processes
