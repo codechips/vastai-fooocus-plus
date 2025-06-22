@@ -78,8 +78,8 @@ RUN uv venv --seed --python 3.10 .venv && \
     . .venv/bin/activate && \
     # Follow FooocusPlus installation pattern (based on Linux install script)
     # 1. Upgrade pip and install base tools with setuptools constraint
-    pip install --upgrade pip && \
-    pip install "setuptools<70" wheel packaging && \
+    pip install --upgrade pip==25.1.1 && \
+    pip install "setuptools<70" wheel==0.45.1 packaging==25.0 && \
     # 2. Install PyTorch (architecture-specific with pinned versions)
     if [ "$(uname -m)" = "x86_64" ]; then \
         pip install torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121; \
@@ -87,7 +87,8 @@ RUN uv venv --seed --python 3.10 .venv && \
         pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2; \
     fi && \
     # 3. Install core dependencies first (as per install script)
-    pip install pygit2 torchruntime requests cmake && \
+    # hadolint ignore=DL3013
+    pip install "pygit2>=1.18.0" torchruntime==1.18.1 requests cmake && \
     # 4. Install requirements_patch.txt first (critical for FooocusPlus)
     if [ -f requirements_patch.txt ]; then \
         pip install -r requirements_patch.txt; \

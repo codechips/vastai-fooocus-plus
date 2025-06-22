@@ -20,7 +20,7 @@ function start_fooocus() {
         echo "fooocus: this is a one-time 26GB download and may take several minutes"
         
         # Install required tools for SupportPack extraction
-        pip install py7zr huggingface-hub
+        pip install py7zr==1.0.0 "huggingface-hub>=0.29.3"
         
         # Download SupportPack.7z from HuggingFace
         echo "fooocus: downloading SupportPack.7z from HuggingFace..."
