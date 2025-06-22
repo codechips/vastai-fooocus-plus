@@ -77,31 +77,27 @@ RUN uv venv --seed --python 3.10 .venv && \
     # Activate the virtual environment
     . .venv/bin/activate && \
     # Follow FooocusPlus installation pattern (based on Linux install script)
-    # Create minimal pyproject.toml for uv add to work
-    echo '[project]' > pyproject.toml && \
-    echo 'name = "fooocus-plus"' >> pyproject.toml && \
-    echo 'version = "1.0.0"' >> pyproject.toml && \
-    echo 'dependencies = []' >> pyproject.toml && \
-    # 1. Install base tools with setuptools constraint
-    uv add "setuptools<70" wheel packaging && \
+    # 1. Upgrade pip and install base tools with setuptools constraint
+    pip install --upgrade pip && \
+    pip install "setuptools<70" wheel packaging && \
     # 2. Install PyTorch (architecture-specific with pinned versions)
     if [ "$(uname -m)" = "x86_64" ]; then \
-        uv add torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121; \
+        pip install torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121; \
     else \
-        uv add torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2; \
+        pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2; \
     fi && \
     # 3. Install core dependencies first (as per install script)
-    uv add pygit2 torchruntime requests cmake && \
+    pip install pygit2 torchruntime requests cmake && \
     # 4. Install requirements_patch.txt first (critical for FooocusPlus)
     if [ -f requirements_patch.txt ]; then \
-        uv add -r requirements_patch.txt; \
+        pip install -r requirements_patch.txt; \
     fi && \
     # 5. Install main requirements (but skip conflicting setuptools version)
     if [ -f requirements_versions.txt ]; then \
         grep -v "^setuptools==" requirements_versions.txt > /tmp/requirements_filtered.txt && \
-        uv add -r /tmp/requirements_filtered.txt; \
+        pip install -r /tmp/requirements_filtered.txt; \
     elif [ -f requirements.txt ]; then \
-        uv add -r requirements.txt; \
+        pip install -r requirements.txt; \
     fi && \
     # Verify PyTorch installation (with activated venv)
     python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}')" && \

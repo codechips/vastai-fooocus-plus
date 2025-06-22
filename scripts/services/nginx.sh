@@ -142,6 +142,33 @@ EOF
     sed -i "s/EXTERNAL_IP:TERMINAL_PORT/${EXTERNAL_IP}:${TERMINAL_PORT}/g" /opt/nginx/html/index.html
     sed -i "s/EXTERNAL_IP:LOGS_PORT/${EXTERNAL_IP}:${LOGS_PORT}/g" /opt/nginx/html/index.html
     
+    # Configure nginx for minimal resource usage
+    # CRITICAL: Force only 1-2 workers regardless of CPU count
+    # - worker_processes: number of worker processes (1 = minimal, 2 = balanced)
+    # - worker_connections: max connections per worker
+    # - worker_rlimit_nofile: max file descriptors
+    
+    # First, check current nginx.conf
+    echo "nginx: checking current worker_processes setting..."
+    grep "worker_processes" /etc/nginx/nginx.conf || echo "nginx: no worker_processes found"
+    
+    # Force worker_processes to a reasonable number (default: 2)
+    # This overrides 'auto' which can create hundreds of workers on high-core systems
+    NGINX_WORKERS="${NGINX_WORKERS:-2}"
+    echo "nginx: setting worker_processes to ${NGINX_WORKERS}"
+    
+    if grep -q "worker_processes" /etc/nginx/nginx.conf; then
+        sed -i "s/worker_processes.*/worker_processes ${NGINX_WORKERS};/" /etc/nginx/nginx.conf
+    else
+        # If not found, add it at the beginning
+        sed -i "1i worker_processes ${NGINX_WORKERS};" /etc/nginx/nginx.conf
+    fi
+    
+    # Also limit connections and file descriptors
+    sed -i 's/worker_connections.*/worker_connections 512;/' /etc/nginx/nginx.conf
+    
+    echo "nginx: configured for 2 worker processes (was auto/250+)"
+    
     # Create simple nginx configuration
     cat > /etc/nginx/sites-available/default << 'EOF'
 server {
