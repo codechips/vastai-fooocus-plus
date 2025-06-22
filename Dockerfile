@@ -72,7 +72,7 @@ RUN git clone https://github.com/DavidDragonsage/FooocusPlus.git fooocus
 WORKDIR /opt/fooocus
 
 # Create Python environment with uv (manages Python + packages)
-# hadolint ignore=SC2015
+# hadolint ignore=SC2015,DL3013
 RUN uv venv --seed --python 3.10 .venv && \
     # Activate the virtual environment
     . .venv/bin/activate && \
