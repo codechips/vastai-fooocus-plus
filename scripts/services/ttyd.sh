@@ -11,8 +11,12 @@ function start_ttyd() {
         AUTH_ARGS=""
     fi
 
+    # Set start directory (configurable via TTYD_START_DIR, defaults to /workspace)
+    TTYD_START_DIR="${TTYD_START_DIR:-/workspace}"
+    echo "ttyd: start directory set to ${TTYD_START_DIR}"
+    
     # Use -W flag to enable writable terminal (fixes readonly issue)
-    nohup /usr/local/bin/ttyd ${AUTH_ARGS} -W -p 7020 bash >/workspace/logs/ttyd.log 2>&1 &
+    nohup /usr/local/bin/ttyd ${AUTH_ARGS} -W -p 7020 bash -c "cd '${TTYD_START_DIR}' && bash" >/workspace/logs/ttyd.log 2>&1 &
     echo "ttyd: started on port 7020 (writable mode)"
     echo "ttyd: log file at /workspace/logs/ttyd.log"
 }

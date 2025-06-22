@@ -19,8 +19,13 @@ function start_fooocus() {
         echo "fooocus: installing SupportPack on first run..."
         echo "fooocus: this is a one-time 26GB download and may take several minutes"
         
-        # Install required tools for SupportPack extraction
-        pip install py7zr==1.0.0 "huggingface-hub>=0.29.3"
+        # Install required tools for SupportPack extraction (using fast uv installer)
+        echo "fooocus: installing SupportPack tools with uv (faster than pip)"
+        uv pip install py7zr==1.0.0 "huggingface-hub>=0.29.3"
+        
+        # Pre-install gradio_client to prevent dependency issues during startup
+        echo "fooocus: pre-installing gradio_client to prevent import errors"
+        uv pip install "gradio_client>=0.5.0,<0.6.0"
         
         # Download SupportPack.7z from HuggingFace
         echo "fooocus: downloading SupportPack.7z from HuggingFace..."
@@ -38,6 +43,21 @@ function start_fooocus() {
         echo "fooocus: SupportPack installation completed"
     else
         echo "fooocus: SupportPack already installed (found marker file)"
+    fi
+    
+    # Always ensure gradio_client is installed to prevent import errors
+    # This fixes the "ModuleNotFoundError: No module named 'gradio_client'" issue
+    echo "fooocus: ensuring gradio_client is available (using fast uv installer)"
+    uv pip install "gradio_client>=0.5.0,<0.6.0" --quiet
+    
+    # Patch FooocusPlus to use fast uv installer instead of slow pip
+    echo "fooocus: patching launch_util.py to use uv instead of pip for faster installs"
+    if ! grep -q "uv pip" modules/launch_util.py; then
+        # Replace 'python -m pip' with 'uv pip' for much faster package installation
+        sed -i 's/"{python}" -m pip/uv pip/g' modules/launch_util.py
+        echo "fooocus: successfully patched launch_util.py to use uv (5-10x faster)"
+    else
+        echo "fooocus: launch_util.py already patched to use uv"
     fi
 
     # Default Fooocus Plus arguments
