@@ -12,22 +12,70 @@ function start_fooocus() {
     
     # Change to the Fooocus directory (required for proper operation)
     cd /opt/fooocus
+    
+    # Install SupportPack on first run (following Linux install script pattern)
+    SUPPORTPACK_MARKER="/opt/fooocus/.supportpack_installed"
+    if [[ ! -f "${SUPPORTPACK_MARKER}" ]]; then
+        echo "fooocus: installing SupportPack on first run..."
+        echo "fooocus: this is a one-time 26GB download and may take several minutes"
+        
+        # Install required tools for SupportPack extraction
+        pip install py7zr huggingface-hub
+        
+        # Download SupportPack.7z from HuggingFace
+        echo "fooocus: downloading SupportPack.7z from HuggingFace..."
+        huggingface-cli download --local-dir /opt/fooocus DavidDragonsage/FooocusPlus SupportPack.7z
+        
+        # Extract SupportPack to current directory
+        echo "fooocus: extracting SupportPack.7z..."
+        py7zr x --verbose /opt/fooocus/SupportPack.7z /opt/fooocus/
+        
+        # Clean up the archive to save space
+        rm -f /opt/fooocus/SupportPack.7z
+        
+        # Create marker file to indicate SupportPack is installed
+        touch "${SUPPORTPACK_MARKER}"
+        echo "fooocus: SupportPack installation completed"
+    else
+        echo "fooocus: SupportPack already installed (found marker file)"
+    fi
 
     # Default Fooocus Plus arguments
     # Fooocus Plus uses port 7865 by default, we'll override to 8010 to match expected port
     DEFAULT_ARGS="--listen --port 8010 --disable-in-browser --theme dark --models-root ${WORKSPACE}/fooocus/models"
 
-    # Add Gradio authentication using environment variables
+    # Enable FooocusPlus built-in authentication using auth.json
     if [[ ${USERNAME} ]] && [[ ${PASSWORD} ]]; then
-        AUTH_ARGS="--gradio-auth ${USERNAME}:${PASSWORD}"
-        echo "fooocus: enabling Gradio authentication for user: ${USERNAME}"
+        echo "fooocus: enabling built-in authentication for user: ${USERNAME}"
+        
+        # Create auth.json file for FooocusPlus authentication
+        cat > auth.json << EOF
+[
+  {
+    "user": "${USERNAME}",
+    "pass": "${PASSWORD}"
+  }
+]
+EOF
+        
+        # Patch webui.py to enable authentication in gr.Blocks()
+        if ! grep -q "auth=check_auth" webui.py; then
+            echo "fooocus: patching webui.py to enable authentication"
+            sed -i 's/common\.GRADIO_ROOT = gr\.Blocks(/common.GRADIO_ROOT = gr.Blocks(auth=check_auth if auth_enabled else None, /' webui.py
+        fi
+        
+        # Patch webui.py to allow external access (change 127.0.0.1 to 0.0.0.0)
+        if grep -q 'server_name="127.0.0.1"' webui.py; then
+            echo "fooocus: enabling external access (0.0.0.0)"
+            sed -i 's/server_name="127.0.0.1"/server_name="0.0.0.0"/' webui.py
+        fi
     else
-        AUTH_ARGS=""
         echo "fooocus: starting without authentication (no USERNAME/PASSWORD set)"
+        echo "fooocus: WARNING - FooocusPlus will only be accessible locally (127.0.0.1)"
     fi
 
-    # Combine default args with auth and any custom args
-    FULL_ARGS="${DEFAULT_ARGS} ${AUTH_ARGS} ${FOOOCUS_ARGS}"
+    # Combine default args with any custom args
+    FULL_ARGS="${DEFAULT_ARGS} ${FOOOCUS_ARGS}"
 
     # Determine entry point based on auto-update setting (default: true)
     if [[ "${FOOOCUS_NO_AUTO_UPDATE}" == "True" ]] || [[ "${FOOOCUS_NO_AUTO_UPDATE}" == "true" ]]; then
