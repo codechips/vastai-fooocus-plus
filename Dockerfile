@@ -124,6 +124,7 @@ COPY config/filebrowser/filebrowser.json /root/.filebrowser.json
 COPY scripts/start.sh /opt/bin/start.sh
 COPY scripts/services/ /opt/bin/services/
 COPY scripts/provision/ /opt/provision/
+COPY templates/ /opt/templates/
 
 # Configure filebrowser, set permissions, and final cleanup
 # hadolint ignore=SC2015

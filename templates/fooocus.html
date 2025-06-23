@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fooocus Plus - Loading</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+            color: #e0e0e0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .loading-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #fde120;
+        }
+        
+        .spinner {
+            width: 80px;
+            height: 80px;
+            margin: 2rem auto;
+            border: 4px solid #444;
+            border-top: 4px solid #fde120;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            color: #ccc;
+        }
+        
+        .info {
+            font-size: 1rem;
+            color: #888;
+            margin-top: 2rem;
+            line-height: 1.4;
+        }
+        
+        .back-link {
+            margin-top: 2rem;
+        }
+        
+        .back-link a {
+            color: #fde120;
+            text-decoration: none;
+            border: 1px solid #fde120;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-link a:hover {
+            background: #fde120;
+            color: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <h1>Fooocus Plus is Starting</h1>
+        <div class="spinner"></div>
+        <div class="status" id="status">Checking status...</div>
+        <div class="info">
+            Please wait while Fooocus Plus initializes. This may take a few minutes on first startup.<br>
+            You will be automatically redirected when ready.
+        </div>
+        <div class="back-link">
+            <a href="/">← Back to Services</a>
+        </div>
+    </div>
+    
+    <script>
+        const FOOOCUS_PORT = '{{FOOOCUS_PORT}}';
+        const FOOOCUS_URL = 'http://' + window.location.hostname + ':' + FOOOCUS_PORT;
+        
+        let checkCount = 0;
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        function checkFooocus() {
+            checkCount++;
+            updateStatus('Checking Fooocus status... (attempt ' + checkCount + ')');
+            
+            // Use fetch with no-cors mode to avoid CORS issues
+            fetch(FOOOCUS_URL, { 
+                mode: 'no-cors',
+                cache: 'no-cache'
+            }).then(() => {
+                // If we get here, Fooocus responded
+                updateStatus('Fooocus is ready! Redirecting...');
+                window.location.replace(FOOOCUS_URL);
+            }).catch(() => {
+                // Fooocus not ready yet
+                const now = new Date().toLocaleTimeString();
+                updateStatus('Still starting... checked at ' + now);
+                
+                // Check again in 5 seconds
+                setTimeout(checkFooocus, 5000);
+            });
+        }
+        
+        // Try immediate redirect first (in case Fooocus is already up)
+        fetch(FOOOCUS_URL, { mode: 'no-cors', cache: 'no-cache' })
+            .then(() => {
+                // Fooocus is ready - redirect immediately without showing loading page
+                window.location.replace(FOOOCUS_URL);
+            })
+            .catch(() => {
+                // Fooocus not ready - show loading page and start checking
+                document.body.style.display = 'flex';
+                updateStatus('Fooocus is starting up...');
+                
+                // Start checking in 2 seconds
+                setTimeout(checkFooocus, 2000);
+            });
+    </script>
+</body>
+</html>
