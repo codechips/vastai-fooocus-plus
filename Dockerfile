@@ -44,6 +44,8 @@ RUN apt-get update && \
     libgit2-1.1 \
     libgit2-dev \
     pkg-config \
+    # 7zip for SupportPack extraction
+    p7zip-full \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     # Install uv (fastest Python package manager and environment manager)

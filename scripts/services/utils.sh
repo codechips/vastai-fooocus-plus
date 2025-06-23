@@ -51,25 +51,25 @@ function setup_workspace() {
     echo "Setting up workspace..."
 
     # Create log directory
-    mkdir -p /workspace/logs
+    mkdir -p ${WORKSPACE}/logs
 
     # Create Fooocus model directories if they don't exist
-    mkdir -p /workspace/fooocus/models/checkpoints
-    mkdir -p /workspace/fooocus/models/loras
-    mkdir -p /workspace/fooocus/models/vae
-    mkdir -p /workspace/fooocus/models/embeddings
-    mkdir -p /workspace/fooocus/models/hypernetworks
-    mkdir -p /workspace/fooocus/models/controlnet
-    mkdir -p /workspace/fooocus/models/upscale_models
-    mkdir -p /workspace/fooocus/models/inpaint
-    mkdir -p /workspace/fooocus/models/clip
-    mkdir -p /workspace/fooocus/models/clip_vision
-    mkdir -p /workspace/fooocus/models/diffusers
-    mkdir -p /workspace/fooocus/models/unet
-    mkdir -p /workspace/fooocus/models/prompt_expansion
-    mkdir -p /workspace/fooocus/models/llms
-    mkdir -p /workspace/fooocus/models/safety_checker
-    mkdir -p /workspace/fooocus/outputs
+    mkdir -p ${WORKSPACE}/fooocus/models/checkpoints
+    mkdir -p ${WORKSPACE}/fooocus/models/loras
+    mkdir -p ${WORKSPACE}/fooocus/models/vae
+    mkdir -p ${WORKSPACE}/fooocus/models/embeddings
+    mkdir -p ${WORKSPACE}/fooocus/models/hypernetworks
+    mkdir -p ${WORKSPACE}/fooocus/models/controlnet
+    mkdir -p ${WORKSPACE}/fooocus/models/upscale_models
+    mkdir -p ${WORKSPACE}/fooocus/models/inpaint
+    mkdir -p ${WORKSPACE}/fooocus/models/clip
+    mkdir -p ${WORKSPACE}/fooocus/models/clip_vision
+    mkdir -p ${WORKSPACE}/fooocus/models/diffusers
+    mkdir -p ${WORKSPACE}/fooocus/models/unet
+    mkdir -p ${WORKSPACE}/fooocus/models/prompt_expansion
+    mkdir -p ${WORKSPACE}/fooocus/models/llms
+    mkdir -p ${WORKSPACE}/fooocus/models/safety_checker
+    mkdir -p ${WORKSPACE}/fooocus/outputs
 
     # Note: Models directory handled by --models-root argument in fooocus.sh
     # Output directory will be created by Fooocus when needed
@@ -112,12 +112,12 @@ function show_info() {
     echo "Default credentials: ${USERNAME}/${PASSWORD}"
     echo ""
     echo "Logs:"
-    echo "  - Nginx: /workspace/logs/nginx.log"
-    echo "  - Fooocus Plus: /workspace/logs/fooocus.log"
-    echo "  - Filebrowser: /workspace/logs/filebrowser.log"
-    echo "  - TTYd: /workspace/logs/ttyd.log"
-    echo "  - Logdy: /workspace/logs/logdy.log"
-    echo "  - Provisioning: /workspace/logs/provision.log"
+    echo "  - Nginx: ${WORKSPACE}/logs/nginx.log"
+    echo "  - Fooocus Plus: ${WORKSPACE}/logs/fooocus.log"
+    echo "  - Filebrowser: ${WORKSPACE}/logs/filebrowser.log"
+    echo "  - TTYd: ${WORKSPACE}/logs/ttyd.log"
+    echo "  - Logdy: ${WORKSPACE}/logs/logdy.log"
+    echo "  - Provisioning: ${WORKSPACE}/logs/provision.log"
     echo ""
     echo "Environment Variables:"
     echo "  - PROVISION_URL: ${PROVISION_URL:-not set}"

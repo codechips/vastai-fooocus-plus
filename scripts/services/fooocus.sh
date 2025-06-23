@@ -13,34 +13,53 @@ function start_fooocus() {
     # Change to the Fooocus directory (required for proper operation)
     cd /opt/fooocus
     
-    # Install SupportPack on first run (following Linux install script pattern)
+    # Install SupportPack in background on first run
     SUPPORTPACK_MARKER="/opt/fooocus/.supportpack_installed"
-    if [[ ! -f "${SUPPORTPACK_MARKER}" ]]; then
-        echo "fooocus: installing SupportPack on first run..."
+    if [[ ! -f "${SUPPORTPACK_MARKER}" ]] && [[ ! -f "/opt/fooocus/.supportpack_installing" ]]; then
+        echo "fooocus: starting SupportPack installation in background..."
         echo "fooocus: this is a one-time 26GB download and may take several minutes"
         
-        # Install required tools for SupportPack extraction (using fast uv installer)
-        echo "fooocus: installing SupportPack tools with uv (faster than pip)"
-        uv pip install py7zr==1.0.0 "huggingface-hub>=0.29.3"
+        # Create installing marker to prevent duplicate runs
+        touch /opt/fooocus/.supportpack_installing
         
-        # Pre-install gradio_client to prevent dependency issues during startup
-        echo "fooocus: pre-installing gradio_client to prevent import errors"
-        uv pip install "gradio_client>=0.5.0,<0.6.0"
+        # Run SupportPack installation in background
+        (
+            # Install huggingface-hub for downloading
+            echo "fooocus: [SupportPack] installing huggingface-hub..."
+            uv pip install "huggingface-hub>=0.29.3" --quiet
+            
+            # Download SupportPack.7z from HuggingFace
+            echo "fooocus: [SupportPack] downloading SupportPack.7z (26GB)..."
+            huggingface-cli download --local-dir /opt/fooocus DavidDragonsage/FooocusPlus SupportPack.7z
+            
+            # Extract SupportPack using native 7z command
+            echo "fooocus: [SupportPack] extracting SupportPack.7z..."
+            cd /opt/fooocus && 7z x -y SupportPack.7z
+            
+            # Move UserDir models to workspace if extracted there
+            if [[ -d "/opt/fooocus/UserDir/models" ]]; then
+                echo "fooocus: [SupportPack] moving models to workspace..."
+                # Create workspace models directory if it doesn't exist
+                mkdir -p ${WORKSPACE}/fooocus/models
+                # Move all model subdirectories to workspace
+                cp -r /opt/fooocus/UserDir/models/* ${WORKSPACE}/fooocus/models/ 2>/dev/null || true
+                # Clean up UserDir
+                rm -rf /opt/fooocus/UserDir
+            fi
+            
+            # Clean up the archive to save space
+            rm -f /opt/fooocus/SupportPack.7z
+            
+            # Clean up installing marker and create completion marker
+            rm -f /opt/fooocus/.supportpack_installing
+            touch "${SUPPORTPACK_MARKER}"
+            echo "fooocus: [SupportPack] installation completed successfully"
+        ) > ${WORKSPACE}/logs/supportpack_install.log 2>&1 &
         
-        # Download SupportPack.7z from HuggingFace
-        echo "fooocus: downloading SupportPack.7z from HuggingFace..."
-        huggingface-cli download --local-dir /opt/fooocus DavidDragonsage/FooocusPlus SupportPack.7z
-        
-        # Extract SupportPack to current directory
-        echo "fooocus: extracting SupportPack.7z..."
-        py7zr x --verbose /opt/fooocus/SupportPack.7z /opt/fooocus/
-        
-        # Clean up the archive to save space
-        rm -f /opt/fooocus/SupportPack.7z
-        
-        # Create marker file to indicate SupportPack is installed
-        touch "${SUPPORTPACK_MARKER}"
-        echo "fooocus: SupportPack installation completed"
+        echo "fooocus: SupportPack installation running in background"
+        echo "fooocus: check ${WORKSPACE}/logs/supportpack_install.log for progress"
+    elif [[ -f "/opt/fooocus/.supportpack_installing" ]]; then
+        echo "fooocus: SupportPack installation already in progress"
     else
         echo "fooocus: SupportPack already installed (found marker file)"
     fi
@@ -53,8 +72,22 @@ function start_fooocus() {
     # Patch FooocusPlus to use fast uv installer instead of slow pip
     echo "fooocus: patching launch_util.py to use uv instead of pip for faster installs"
     if ! grep -q "uv pip" modules/launch_util.py; then
+        # Backup original file
+        cp modules/launch_util.py modules/launch_util.py.backup
+        
         # Replace 'python -m pip' with 'uv pip' for much faster package installation
         sed -i 's/"{python}" -m pip/uv pip/g' modules/launch_util.py
+        
+        # Fix uv pip command differences:
+        # 1. uninstall -y → uninstall (uv doesn't need/support -y flag)
+        sed -i 's/uv pip uninstall -y/uv pip uninstall/g' modules/launch_util.py
+        
+        # 2. Remove --disable-pip-version-check (not supported by uv)
+        sed -i 's/ --disable-pip-version-check//g' modules/launch_util.py
+        
+        # 3. install -U -I → install --upgrade --force-reinstall
+        sed -i 's/install -U -I/install --upgrade --force-reinstall/g' modules/launch_util.py
+        
         echo "fooocus: successfully patched launch_util.py to use uv (5-10x faster)"
     else
         echo "fooocus: launch_util.py already patched to use uv"
@@ -112,14 +145,14 @@ EOF
     # Use accelerate by default, allow opt-out
     if [[ "${NO_ACCELERATE}" != "True" ]] && command -v accelerate >/dev/null 2>&1; then
         echo "fooocus: launching with accelerate and args: ${FULL_ARGS}"
-        nohup accelerate launch --num_cpu_threads_per_process=6 ${ENTRY_POINT} ${FULL_ARGS} >/workspace/logs/fooocus.log 2>&1 &
+        nohup accelerate launch --num_cpu_threads_per_process=6 ${ENTRY_POINT} ${FULL_ARGS} >${WORKSPACE}/logs/fooocus.log 2>&1 &
     else
         echo "fooocus: launching with standard python and args: ${FULL_ARGS}"
-        nohup python ${ENTRY_POINT} ${FULL_ARGS} >/workspace/logs/fooocus.log 2>&1 &
+        nohup python ${ENTRY_POINT} ${FULL_ARGS} >${WORKSPACE}/logs/fooocus.log 2>&1 &
     fi
 
     echo "fooocus: started on port 8010"
-    echo "fooocus: log file at /workspace/logs/fooocus.log"
+    echo "fooocus: log file at ${WORKSPACE}/logs/fooocus.log"
 }
 
 # Note: Function is called explicitly from start.sh

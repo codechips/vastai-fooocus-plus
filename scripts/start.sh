@@ -27,9 +27,9 @@ setup_workspace
 # Start services
 start_nginx
 start_filebrowser
-start_fooocus
 start_ttyd
 start_logdy
+start_fooocus
 
 # Show information
 show_info

@@ -17,7 +17,7 @@ function run_provisioning() {
         echo "provisioning: completed successfully"
     else
         echo "provisioning: failed, but continuing startup"
-        echo "provisioning: check /workspace/logs/provision.log for details"
+        echo "provisioning: check ${WORKSPACE}/logs/provision.log for details"
     fi
 }
 

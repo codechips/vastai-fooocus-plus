@@ -12,9 +12,9 @@ function start_filebrowser() {
     fi
 
     # Start filebrowser in background
-    nohup /usr/local/bin/filebrowser >/workspace/logs/filebrowser.log 2>&1 &
+    nohup /usr/local/bin/filebrowser >${WORKSPACE}/logs/filebrowser.log 2>&1 &
     echo "filebrowser: started on port 7010"
-    echo "filebrowser: log file at /workspace/logs/filebrowser.log"
+    echo "filebrowser: log file at ${WORKSPACE}/logs/filebrowser.log"
 }
 
 # Note: Function is called explicitly from start.sh

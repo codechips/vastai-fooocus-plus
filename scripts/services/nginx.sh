@@ -198,10 +198,10 @@ server {
 EOF
 
     # Start nginx
-    nginx -t && nginx -g 'daemon off;' >/workspace/logs/nginx.log 2>&1 &
+    nginx -t && nginx -g 'daemon off;' >${WORKSPACE}/logs/nginx.log 2>&1 &
     
     echo "nginx: started on port 80"
-    echo "nginx: log file at /workspace/logs/nginx.log"
+    echo "nginx: log file at ${WORKSPACE}/logs/nginx.log"
     echo "nginx: serving landing page at http://${EXTERNAL_IP}:80"
 }
 
