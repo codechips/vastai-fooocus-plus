@@ -1,0 +1,33 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    root /opt/nginx/html;
+    index index.html;
+    
+    server_name _;
+    
+    # Log all nginx logs to workspace
+    access_log {{WORKSPACE}}/logs/nginx_access.log;
+    error_log {{WORKSPACE}}/logs/nginx_error.log;
+    
+    location / {
+        try_files $uri $uri/ =404;
+    }
+    
+    # Smart Fooocus redirect page
+    location = /fooocus {
+        try_files /fooocus.html =404;
+    }
+    
+    # Disable access logs for favicon and robots.txt
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+    
+    location = /robots.txt {
+        log_not_found off;
+        access_log off;
+    }
+}

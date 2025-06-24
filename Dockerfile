@@ -119,17 +119,22 @@ RUN uv venv --seed --python 3.10 .venv && \
     find /opt/fooocus/.venv -name "*.pyc" -delete && \
     find /opt/fooocus/.venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
+# Create required directories
+RUN mkdir -p /opt/bin /opt/provision /opt/nginx/html /opt/config
+
 # Copy configuration files and scripts (frequently changing layer)
 COPY config/filebrowser/filebrowser.json /root/.filebrowser.json
+COPY config/nginx/sites-available/default /etc/nginx/sites-available/default
 COPY scripts/start.sh /opt/bin/start.sh
 COPY scripts/services/ /opt/bin/services/
 COPY scripts/provision/ /opt/provision/
-COPY templates/ /opt/templates/
+
+# Copy HTML templates directly to nginx directory
+COPY config/nginx/html/ /opt/nginx/html/
 
 # Configure filebrowser, set permissions, and final cleanup
 # hadolint ignore=SC2015
-RUN mkdir -p /opt/bin /opt/provision && \
-    chmod +x /opt/bin/start.sh /opt/bin/services/*.sh /opt/provision/provision.py && \
+RUN chmod +x /opt/bin/start.sh /opt/bin/services/*.sh /opt/provision/provision.py && \
     date -u +"%Y-%m-%dT%H:%M:%SZ" > /root/BUILDTIME.txt && \
     filebrowser config init && \
     filebrowser users add admin admin --perm.admin && \
