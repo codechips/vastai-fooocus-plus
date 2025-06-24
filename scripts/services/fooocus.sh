@@ -64,10 +64,7 @@ function start_fooocus() {
         echo "fooocus: SupportPack already installed (found marker file)"
     fi
     
-    # Always ensure gradio_client is installed to prevent import errors
-    # This fixes the "ModuleNotFoundError: No module named 'gradio_client'" issue
-    echo "fooocus: ensuring gradio_client is available (using fast uv installer)"
-    uv pip install "gradio_client>=0.5.0,<0.6.0" --quiet
+    # Skip gradio installation - it's already installed from requirements_versions.txt during Docker build
     
     # Patch FooocusPlus to use fast uv installer instead of slow pip
     echo "fooocus: patching launch_util.py to use uv instead of pip for faster installs"
@@ -87,6 +84,9 @@ function start_fooocus() {
         
         # 3. install -U -I → install --upgrade --force-reinstall
         sed -i 's/install -U -I/install --upgrade --force-reinstall/g' modules/launch_util.py
+        
+        # 4. Replace --prefer-binary with --only-binary :all: (uv equivalent)
+        sed -i 's/--prefer-binary/--only-binary :all:/g' modules/launch_util.py
         
         echo "fooocus: successfully patched launch_util.py to use uv (5-10x faster)"
     else

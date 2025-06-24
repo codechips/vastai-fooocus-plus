@@ -21,6 +21,7 @@ RUN apt-get update && \
     curl \
     git \
     build-essential \
+    python3-dev \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
@@ -90,7 +91,7 @@ RUN uv venv --seed --python 3.10 .venv && \
     fi && \
     # 3. Install core dependencies first (as per install script)
     # hadolint ignore=DL3013
-    pip install "pygit2>=1.18.0" torchruntime==1.18.1 requests cmake && \
+    pip install "pygit2>=1.18.0" torchruntime==1.18.1 requests cmake packaging==24.1 && \
     # 4. Install requirements_patch.txt first (critical for FooocusPlus)
     if [ -f requirements_patch.txt ]; then \
         pip install -r requirements_patch.txt; \
