@@ -124,20 +124,12 @@ function start_fooocus() {
 ]
 EOF
 
-        # Patch webui.py to enable authentication in gr.Blocks()
-        if ! grep -q "auth=check_auth" webui.py; then
-            echo "fooocus: patching webui.py to enable authentication"
-            sed -i 's/common\.GRADIO_ROOT = gr\.Blocks(/common.GRADIO_ROOT = gr.Blocks(auth=check_auth if auth_enabled else None, /' webui.py
-        fi
-
-        # Patch webui.py to allow external access (change 127.0.0.1 to 0.0.0.0)
-        if grep -q 'server_name="127.0.0.1"' webui.py; then
-            echo "fooocus: enabling external access (0.0.0.0)"
-            sed -i 's/server_name="127.0.0.1"/server_name="0.0.0.0"/' webui.py
-        fi
+        echo "fooocus: authentication and external access now built into FooocusPlus upstream"
+        echo "fooocus: no runtime patching needed - auth.json will be used automatically"
     else
         echo "fooocus: starting without authentication (no USERNAME/PASSWORD set)"
-        echo "fooocus: WARNING - FooocusPlus will only be accessible locally (127.0.0.1)"
+        echo "fooocus: WARNING - will be accessible externally without authentication on 0.0.0.0"
+        echo "fooocus: set USERNAME and PASSWORD environment variables to enable authentication"
     fi
 
     # Combine default args with any custom args
