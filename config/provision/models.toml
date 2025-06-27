@@ -1,0 +1,244 @@
+# FooocusPlus Models - parallel download of all essential models
+# Fast parallel downloads replacing the slow 26GB SupportPack.7z archive
+
+[models.controlnet]
+parsing_bisenet = {
+    source = "huggingface",
+    repo = "lllyasviel/ControlNet",
+    file = "annotator/ckpts/parsing_bisenet.pth",
+    description = "BiSeNet parsing model for ControlNet"
+}
+
+parsing_parsenet = {
+    source = "huggingface", 
+    repo = "lllyasviel/ControlNet",
+    file = "annotator/ckpts/parsing_parsenet.pth",
+    description = "ParseNet parsing model for ControlNet"
+}
+
+xinsir_cn_openpose_sdxl = {
+    source = "huggingface",
+    repo = "xinsir/controlnet-openpose-sdxl-1.0",
+    file = "diffusion_pytorch_model.safetensors",
+    filename = "xinsir_cn_openpose_sdxl_1.0.safetensors",
+    description = "OpenPose ControlNet for SDXL"
+}
+
+[models.inpaint]
+fooocus_inpaint_head = {
+    source = "huggingface",
+    repo = "lllyasviel/fooocus_inpaint",
+    file = "fooocus_inpaint_head.pth",
+    description = "Fooocus inpainting head model"
+}
+
+groundingdino_swint_ogc = {
+    source = "huggingface",
+    repo = "IDEA-Research/grounding-dino-tiny",
+    file = "groundingdino_swint_ogc.pth", 
+    description = "GroundingDINO model for object detection"
+}
+
+inpaint_v26_patch = {
+    source = "huggingface",
+    repo = "lllyasviel/fooocus_inpaint", 
+    file = "inpaint_v26.fooocus.patch",
+    description = "Fooocus inpaint patch v26"
+}
+
+isnet_anime = {
+    source = "huggingface",
+    repo = "skytnt/anime-seg",
+    file = "isnet_anime.onnx",
+    description = "ISNet anime segmentation model"
+}
+
+isnet_general_use = {
+    source = "huggingface",
+    repo = "briaai/RMBG-1.4",
+    file = "model.onnx",
+    filename = "isnet-general-use.onnx",
+    description = "ISNet general purpose segmentation"
+}
+
+sam_vit_b = {
+    source = "huggingface",
+    repo = "facebook/sam-vit-base",
+    file = "pytorch_model.bin",
+    filename = "sam_vit_b_01ec64.pth",
+    description = "Segment Anything Model ViT-B"
+}
+
+silueta = {
+    source = "huggingface",
+    repo = "briaai/RMBG-1.4", 
+    file = "silueta.onnx",
+    description = "Silueta segmentation model"
+}
+
+u2net = {
+    source = "huggingface",
+    repo = "skytnt/u2net_portrait",
+    file = "u2net_portrait.onnx",
+    filename = "u2net.onnx", 
+    description = "U2Net segmentation model"
+}
+
+u2net_cloth_seg = {
+    source = "huggingface",
+    repo = "levihsu/OOTDiffusion",
+    file = "checkpoints/humanparsing/parsing_atr.onnx",
+    filename = "u2net_cloth_seg.onnx",
+    description = "U2Net cloth segmentation"
+}
+
+u2net_human_seg = {
+    source = "huggingface",
+    repo = "levihsu/OOTDiffusion", 
+    file = "checkpoints/humanparsing/parsing_lip.onnx",
+    filename = "u2net_human_seg.onnx",
+    description = "U2Net human segmentation"
+}
+
+u2netp = {
+    source = "huggingface",
+    repo = "skytnt/u2net_portrait",
+    file = "u2netp_portrait.onnx", 
+    filename = "u2netp.onnx",
+    description = "U2NetP segmentation model"
+}
+
+[models.insightface]
+# InsightFace AntelopeV2 models
+antelope_1k3d68 = {
+    source = "huggingface",
+    repo = "MonsterMMORPG/tools",
+    file = "1k3d68.onnx",
+    description = "InsightFace 1k3d68 model"
+}
+
+antelope_2d106det = {
+    source = "huggingface", 
+    repo = "MonsterMMORPG/tools",
+    file = "2d106det.onnx",
+    description = "InsightFace 2d106det model"
+}
+
+antelope_genderage = {
+    source = "huggingface",
+    repo = "MonsterMMORPG/tools", 
+    file = "genderage.onnx",
+    description = "InsightFace gender/age model"
+}
+
+antelope_glintr100 = {
+    source = "huggingface",
+    repo = "MonsterMMORPG/tools",
+    file = "glintr100.onnx", 
+    description = "InsightFace glintr100 model"
+}
+
+antelope_scrfd_10g = {
+    source = "huggingface",
+    repo = "MonsterMMORPG/tools",
+    file = "scrfd_10g_bnkps.onnx",
+    description = "InsightFace SCRFD face detection"
+}
+
+[models.loras]
+# Flux LoRAs
+antiblur = {
+    source = "huggingface",
+    repo = "Shakker-Labs/FLUX.1-dev-LoRA-AntiBlur",
+    file = "FLUX.1-dev-LoRA-AntiBlur.safetensors",
+    filename = "AntiBlur.safetensors", 
+    description = "Anti-blur LoRA for Flux"
+}
+
+hyper_flux = {
+    source = "huggingface",
+    repo = "ByteDance/Hyper-SD",
+    file = "Hyper-FLUX.1-dev-8steps-lora.safetensors",
+    description = "Hyper-SD 8-step LoRA for Flux"
+}
+
+[models.pulid]
+pulid_flux = {
+    source = "huggingface",
+    repo = "guozinan/PuLID",
+    file = "pulid_flux_v0.9.1.safetensors", 
+    description = "PuLID Flux v0.9.1 model"
+}
+
+[models.rembg]
+rmbg_14 = {
+    source = "huggingface",
+    repo = "briaai/RMBG-1.4",
+    file = "model.pth",
+    filename = "RMBG-1.4.pth",
+    description = "RMBG-1.4 background removal model"
+}
+
+[models.style_models]
+flux_redux = {
+    source = "huggingface", 
+    repo = "black-forest-labs/FLUX.1-Redux-dev",
+    file = "flux1-redux-dev.safetensors",
+    description = "Flux Redux style model"
+}
+
+[models.unet]
+iclight_unet = {
+    source = "huggingface",
+    repo = "lllyasviel/ic-light",
+    file = "iclight_sd15_fc_unet_ldm.safetensors",
+    description = "IC-Light UNet for lighting control"
+}
+
+[models.upscale_models] 
+ultrasharp_4x = {
+    source = "huggingface",
+    repo = "Kim2091/UltraSharp",
+    file = "4x-UltraSharp.pth",
+    description = "4x UltraSharp upscaling model"
+}
+
+fooocus_upscaler = {
+    source = "huggingface", 
+    repo = "lllyasviel/misc",
+    file = "fooocus_upscaler_s409985e5.bin",
+    description = "Fooocus custom upscaler"
+}
+
+[models.vae]
+# VAE models
+ae_vae = {
+    source = "huggingface",
+    repo = "black-forest-labs/FLUX.1-dev", 
+    file = "ae.safetensors",
+    description = "Flux autoencoder VAE"
+}
+
+pony_vae = {
+    source = "huggingface",
+    repo = "PixArt-alpha/pixart_sigma_sdxlvae_T5_diffusers",
+    file = "vae/diffusion_pytorch_model.safetensors",
+    filename = "ponyDiffusionV6XL_vae.safetensors",
+    description = "Pony Diffusion V6 XL VAE"
+}
+
+sd3x_vae = {
+    source = "huggingface",
+    repo = "stabilityai/stable-diffusion-3.5-large",
+    file = "sd3.5_large_vae.safetensors", 
+    filename = "sd3x_fp16.vae.safetensors",
+    description = "SD3.5 Large VAE FP16"
+}
+
+sdxl_vae = {
+    source = "huggingface",
+    repo = "stabilityai/sd-vae-ft-mse-original",
+    file = "vae-ft-mse-840000-ema-pruned.safetensors",
+    filename = "sdxl_vae.safetensors", 
+    description = "SDXL VAE"
+}

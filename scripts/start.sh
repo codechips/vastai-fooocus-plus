@@ -24,6 +24,9 @@ echo "Starting VastAI Fooocus Plus container..."
 # Setup workspace
 setup_workspace
 
+# Run external provisioning first if enabled
+run_provisioning
+
 # Start services
 start_nginx
 start_filebrowser
@@ -33,9 +36,6 @@ start_fooocus
 
 # Show information
 show_info
-
-# Run provisioning if enabled
-run_provisioning
 
 # Keep container running
 echo ""

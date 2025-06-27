@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 try:
-    from huggingface_hub import hf_hub_download, login, HfApi
+    from huggingface_hub import hf_hub_download, login, HfApi, snapshot_download
     HF_AVAILABLE = True
 except ImportError:
     HF_AVAILABLE = False
@@ -49,17 +49,19 @@ class HuggingFaceDownloader:
         repo_id: str, 
         filename: str, 
         target_dir: Path,
-        gated: bool = False
+        gated: bool = False,
+        download_all: bool = False
     ) -> bool:
         """
         Download a model from HuggingFace Hub.
         
         Args:
             model_name: Human-readable model name for logging
-            repo_id: HuggingFace repository ID (e.g., "stabilityai/stable-diffusion-xl-base-1.0")
-            filename: Specific file to download (e.g., "sd_xl_base_1.0.safetensors")
+            repo_id: HuggingFace repository ID (e.g., "openai/clip-vit-large-patch14")
+            filename: Specific file to download (e.g., "model.safetensors") or empty for full repo
             target_dir: Directory to save the model
             gated: Whether this is a gated model requiring authentication
+            download_all: If True, download entire repository instead of single file
             
         Returns:
             True if download succeeded, False otherwise
@@ -75,10 +77,17 @@ class HuggingFaceDownloader:
             self.logger.info(f"    Target: {target_dir}")
             
             # Check if model already exists
-            target_file = target_dir / filename
-            if target_file.exists():
-                self.logger.info(f"✅ {model_name} already exists, skipping download")
-                return True
+            if download_all or not filename:
+                # For full repo downloads, check if target directory exists and has content
+                if target_dir.exists() and any(target_dir.iterdir()):
+                    self.logger.info(f"✅ {model_name} already exists, skipping download")
+                    return True
+            else:
+                # For single file downloads, check specific file
+                target_file = target_dir / filename
+                if target_file.exists():
+                    self.logger.info(f"✅ {model_name} already exists, skipping download")
+                    return True
             
             # Pre-validate access for gated models
             if gated and not await self._can_access_repo(repo_id):
@@ -88,13 +97,23 @@ class HuggingFaceDownloader:
             
             # Download in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
-            downloaded_path = await loop.run_in_executor(
-                None,
-                self._download_sync,
-                repo_id,
-                filename,
-                str(target_dir)
-            )
+            if download_all or not filename:
+                # Download entire repository
+                downloaded_path = await loop.run_in_executor(
+                    None,
+                    self._download_repo_sync,
+                    repo_id,
+                    str(target_dir)
+                )
+            else:
+                # Download single file
+                downloaded_path = await loop.run_in_executor(
+                    None,
+                    self._download_sync,
+                    repo_id,
+                    filename,
+                    str(target_dir)
+                )
             
             if downloaded_path:
                 self.logger.info(f"✅ Successfully downloaded {model_name}")
@@ -108,7 +127,7 @@ class HuggingFaceDownloader:
             return False
     
     def _download_sync(self, repo_id: str, filename: str, target_dir: str) -> Optional[str]:
-        """Synchronous download wrapper for thread pool execution."""
+        """Synchronous download wrapper for single file downloads."""
         try:
             return hf_hub_download(
                 repo_id=repo_id,
@@ -119,6 +138,19 @@ class HuggingFaceDownloader:
             )
         except Exception as e:
             self.logger.error(f"Download error: {e}")
+            return None
+    
+    def _download_repo_sync(self, repo_id: str, target_dir: str) -> Optional[str]:
+        """Synchronous download wrapper for full repository downloads."""
+        try:
+            return snapshot_download(
+                repo_id=repo_id,
+                local_dir=target_dir,
+                token=os.environ.get("HF_TOKEN"),
+                resume_download=True
+            )
+        except Exception as e:
+            self.logger.error(f"Repository download error: {e}")
             return None
     
     async def _can_access_repo(self, repo_id: str) -> bool:

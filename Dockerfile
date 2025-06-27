@@ -75,23 +75,18 @@ RUN git clone https://github.com/DavidDragonsage/FooocusPlus.git fooocus
 
 WORKDIR /opt/fooocus
 
-# Create Python environment with uv (fast) but use pip for packages
+# Create Python environment with uv (fast) but defer package installation to runtime
 # hadolint ignore=SC2015,DL3013
 RUN uv venv --seed --python 3.10 .venv && \
     source .venv/bin/activate && \
+    # Only install essential system packages needed for pip to function
     pip install --upgrade pip==25.1.1 && \
-    pip install "setuptools<70" wheel==0.45.1 packaging==25.0 && \
-    # hadolint ignore=DL3013
-    pip install "pygit2>=1.18.0" torchruntime==1.18.1 requests cmake packaging==24.1 websocket-client altair supervision addict yapf trampoline && \
-    # Upgrade transformers to latest version (as per manual install)
-    pip install --upgrade transformers && \
-    # Clean up unnecessary build dependencies (keep libgit2-1.1 for pygit2 runtime)
-    apt-get remove -y build-essential libgit2-dev pkg-config && \
+    pip install setuptools wheel packaging && \
+    # Clean up build dependencies but keep what's needed for runtime package compilation
+    apt-get remove -y libgit2-dev pkg-config && \
     apt-get autoremove -y && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    find /opt/fooocus/.venv -name "*.pyc" -delete && \
-    find /opt/fooocus/.venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create required directories
 RUN mkdir -p /opt/bin /opt/provision /opt/nginx/html /opt/config
@@ -105,6 +100,9 @@ COPY scripts/provision/ /opt/provision/
 
 # Copy HTML templates directly to nginx directory
 COPY config/nginx/html/ /opt/nginx/html/
+
+# Copy provision configurations
+COPY config/provision/ /opt/config/provision/
 
 # Configure filebrowser, set permissions, and final cleanup
 # hadolint ignore=SC2015

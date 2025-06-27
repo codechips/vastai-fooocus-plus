@@ -246,6 +246,9 @@ class ProvisioningSystem:
             "ESRGAN": "upscale_models",         # Legacy directory name
             "upscale": "upscale_models",
             "upscale_models": "upscale_models",
+            # Special categories
+            "fooocus_builtin": "../fooocus/models/clip_vision",
+            "insightface": "insightface/models/antelopev2",
         }
         return category_mapping.get(category, category)
 
@@ -297,6 +300,7 @@ class ProvisioningSystem:
                 filename=config.get("file", ""),
                 target_dir=target_dir,
                 gated=config.get("gated", False),
+                download_all=config.get("download_all", False),
             )
         except Exception as e:
             self.logger.error(f"HuggingFace download failed for {model_name}: {e}")

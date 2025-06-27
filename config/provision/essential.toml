@@ -1,0 +1,19 @@
+# Essential models for FooocusPlus startup
+# These models are required for basic functionality and prevent startup failures
+
+[models.clip_vision]
+clip-vit-large-patch14 = {
+    source = "huggingface",
+    repo = "openai/clip-vit-large-patch14", 
+    download_all = true,
+    description = "CLIP tokenizer required for text processing - prevents startup failure"
+}
+
+# Also download to built-in FooocusPlus directory to satisfy the copy operation
+[models.fooocus_builtin]
+clip-vit-large-patch14 = {
+    source = "huggingface",
+    repo = "openai/clip-vit-large-patch14", 
+    download_all = true,
+    description = "CLIP tokenizer for FooocusPlus built-in directory"
+}

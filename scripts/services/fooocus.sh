@@ -4,89 +4,63 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/utils.sh"
 
-function install_supportpack() {
-    local SUPPORTPACK_MARKER="/opt/fooocus/.supportpack_installed"
+function provision_models() {
+    # Internal model provisioning - downloads essential FooocusPlus models
+    # This is separate from external provisioning (PROVISION_URL) which runs earlier
+    local PROVISION_MARKER="/opt/fooocus/.models_provisioned"
     
-    if [[ ! -f "${SUPPORTPACK_MARKER}" ]] && [[ ! -f "/opt/fooocus/.supportpack_installing" ]]; then
-        echo "fooocus: starting SupportPack installation in background..."
-        echo "fooocus: this is a one-time 26GB download and may take several minutes"
+    if [[ ! -f "${PROVISION_MARKER}" ]] && [[ ! -f "/opt/fooocus/.models_provisioning" ]]; then
+        echo "fooocus: starting internal model provisioning via parallel downloads..."
+        echo "fooocus: downloading all essential FooocusPlus models"
 
-        # Create installing marker to prevent duplicate runs
-        touch /opt/fooocus/.supportpack_installing
+        # Create provisioning marker to prevent duplicate runs
+        touch /opt/fooocus/.models_provisioning
 
-        # Run SupportPack installation in background
+        # Run model provisioning in background
         (
-            # Install huggingface-hub for downloading
-            echo "fooocus: [SupportPack] installing huggingface-hub..."
-            pip install "huggingface-hub>=0.29.3" --quiet
-
-            # Download SupportPack.7z from HuggingFace
-            echo "fooocus: [SupportPack] downloading SupportPack.7z"
-            huggingface-cli download --local-dir /opt/fooocus DavidDragonsage/FooocusPlus SupportPack.7z
-
-            # Extract SupportPack using native 7z command
-            echo "fooocus: [SupportPack] extracting SupportPack.7z..."
-            cd /opt/fooocus
+            # Navigate to provision directory
+            cd /opt/provision || exit 1
             
-            # Check if 7z file exists and extract
-            if [[ -f "SupportPack.7z" ]]; then
-                echo "fooocus: [SupportPack] SupportPack.7z found ($(du -h SupportPack.7z | cut -f1))"
-                
-                # Extract with error checking
-                if 7z x -y SupportPack.7z; then
-                    echo "fooocus: [SupportPack] extraction successful"
-                    
-                    # List what was extracted using tree for better visualization
-                    echo "fooocus: [SupportPack] extracted contents:"
-                    tree -L 3 /opt/fooocus/ 2>/dev/null | head -30 || ls -la /opt/fooocus/
-                    
-                    # Move UserDir models to workspace if extracted there
-                    if [[ -d "/opt/fooocus/UserDir/models" ]]; then
-                        echo "fooocus: [SupportPack] moving models from UserDir to workspace..."
-                        # Create workspace models directory if it doesn't exist
-                        mkdir -p ${WORKSPACE}/fooocus/models
-                        # Move all model subdirectories to workspace
-                        cp -r /opt/fooocus/UserDir/models/* ${WORKSPACE}/fooocus/models/ 2>/dev/null || true
-                        echo "fooocus: [SupportPack] moved models to ${WORKSPACE}/fooocus/models/"
-                        tree -L 2 ${WORKSPACE}/fooocus/models/ 2>/dev/null | head -20 || ls -la ${WORKSPACE}/fooocus/models/
-                        # Clean up UserDir
-                        rm -rf /opt/fooocus/UserDir
-                    else
-                        echo "fooocus: [SupportPack] no UserDir/models found, checking for direct model files..."
-                        find /opt/fooocus -name "*.safetensors" -o -name "*.ckpt" -o -name "*.bin" | head -10
-                    fi
-                    
-                    # Clean up the archive to save space
-                    rm -f /opt/fooocus/SupportPack.7z
-                    echo "fooocus: [SupportPack] cleaned up archive file"
-                    
-                    # Clean up installing marker and create completion marker
-                    rm -f /opt/fooocus/.supportpack_installing
-                    touch "${SUPPORTPACK_MARKER}"
-                    echo "fooocus: [SupportPack] installation completed successfully"
-                else
-                    echo "fooocus: [SupportPack] ERROR: extraction failed!"
-                    rm -f /opt/fooocus/.supportpack_installing
-                    exit 1
-                fi
+            echo "fooocus: [Provisioning] downloading models in parallel..."
+            
+            # Download essential models first
+            if python provision.py --config "${WORKSPACE}/provision/essential.toml"; then
+                echo "fooocus: [Provisioning] essential models downloaded successfully"
             else
-                echo "fooocus: [SupportPack] ERROR: SupportPack.7z not found after download!"
-                rm -f /opt/fooocus/.supportpack_installing
+                echo "fooocus: [Provisioning] WARNING: essential models download failed"
+            fi
+            
+            # Download all models in parallel
+            if python provision.py --config "${WORKSPACE}/provision/models.toml"; then
+                echo "fooocus: [Provisioning] all models downloaded successfully"
+                
+                # List what was downloaded
+                echo "fooocus: [Provisioning] downloaded models:"
+                tree -L 3 ${WORKSPACE}/fooocus/models/ 2>/dev/null | head -50 || ls -la ${WORKSPACE}/fooocus/models/
+                
+                # Clean up provisioning marker and create completion marker
+                rm -f /opt/fooocus/.models_provisioning
+                touch "${PROVISION_MARKER}"
+                echo "fooocus: [Provisioning] parallel download completed successfully"
+            else
+                echo "fooocus: [Provisioning] ERROR: model downloads failed!"
+                rm -f /opt/fooocus/.models_provisioning
                 exit 1
             fi
-        ) > ${WORKSPACE}/logs/supportpack_install.log 2>&1 &
+            
+        ) > ${WORKSPACE}/logs/provisioning.log 2>&1 &
 
-        echo "fooocus: SupportPack installation running in background"
-        echo "fooocus: check ${WORKSPACE}/logs/supportpack_install.log for progress"
-    elif [[ -f "/opt/fooocus/.supportpack_installing" ]]; then
-        echo "fooocus: SupportPack installation already in progress"
+        echo "fooocus: model provisioning running in background (parallel downloads)"
+        echo "fooocus: check ${WORKSPACE}/logs/provisioning.log for progress"
+    elif [[ -f "/opt/fooocus/.models_provisioning" ]]; then
+        echo "fooocus: model provisioning already in progress"
     else
-        echo "fooocus: SupportPack already installed (found marker file)"
+        echo "fooocus: models already provisioned (found marker file)"
     fi
 }
 
 function start_fooocus() {
-    echo "fooocus: starting Fooocus Plus"
+    echo "fooocus: starting Fooocus Plus with pre-provisioned models"
 
     # Activate the uv-created virtual environment first
     source /opt/fooocus/.venv/bin/activate
@@ -94,25 +68,43 @@ function start_fooocus() {
     # Change to the Fooocus directory (required for proper operation)
     cd /opt/fooocus
 
-    # Install SupportPack in background on first run
-    install_supportpack
+    # Step 1: Install system build dependencies for Python package compilation
+    echo "fooocus: preparing build dependencies for FooocusPlus package compilation..."
+    apt-get update -qq
+    apt-get install -y -qq --no-install-recommends \
+        build-essential \
+        python3-dev \
+        libgit2-dev \
+        pkg-config
+    echo "fooocus: build dependencies installed - FooocusPlus will handle all Python packages"
 
-    pip install -r requirements_patch.txt
-    # Fix package version conflicts for gradio compatibility and add missing dependencies
-    echo "fooocus: fixing package version conflicts and installing missing dependencies..."
-    pip install --force-reinstall \
-        "gradio-client==0.5.0" \
-        "MarkupSafe>=2.0,<3.0" \
-        "pillow>=8.0,<11.0" \
-        "websockets>=10.0,<12.0" \
-        "pooch" \
-        "supervision" \
-        "addict" \
-        "yapf" \
-        "trampoline" --quiet
-    
-    # Upgrade transformers separately (as per manual install requirements)
-    pip install --upgrade transformers --quiet
+    # Step 2: Copy provision configs to workspace for user visibility and control
+    echo "fooocus: setting up provision configs in workspace..."
+    if [ ! -d "${WORKSPACE}/provision" ]; then
+        mkdir -p "${WORKSPACE}/provision"
+        cp -r /opt/config/provision/* "${WORKSPACE}/provision/"
+        echo "fooocus: provision configs copied to ${WORKSPACE}/provision/"
+        echo "fooocus: users can edit configs at ${WORKSPACE}/provision/*.toml"
+    else
+        echo "fooocus: provision configs already exist in workspace"
+    fi
+
+    # Step 3: Pre-provision all models BEFORE starting FooocusPlus
+    echo "fooocus: provisioning models before FooocusPlus startup..."
+    if [ -f "/opt/provision/provision.py" ]; then
+        cd /opt/provision
+        
+        # Download essential models first (prevents CLIP startup errors)
+        echo "fooocus: downloading essential models..."
+        python provision.py --config "${WORKSPACE}/provision/essential.toml" || echo "Warning: Essential model download failed"
+        
+        # Run model provisioning (download all models in parallel)
+        provision_models
+        
+        cd /opt/fooocus
+    else
+        echo "fooocus: provision script not found, skipping model download"
+    fi
 
     # Fooocus Plus uses port 7865 by default, we'll override to 8010 to match expected port
     DEFAULT_ARGS="--listen --port 8010 --disable-in-browser --theme dark --models-root ${WORKSPACE}/fooocus/models"
@@ -171,8 +163,26 @@ EOF
         nohup python ${ENTRY_POINT} ${FULL_ARGS} >${WORKSPACE}/logs/fooocus.log 2>&1 &
     fi
 
+    # Clean up build dependencies after FooocusPlus starts (background task)
+    echo "fooocus: starting background cleanup of build dependencies..."
+    (
+        # Wait for FooocusPlus to complete package installation (check log for completion)
+        while ! grep -q "All requirements met" ${WORKSPACE}/logs/fooocus.log 2>/dev/null; do
+            sleep 10
+        done
+        sleep 30  # Extra wait to ensure installation is complete
+        
+        echo "fooocus: cleaning up build dependencies..."
+        apt-get remove -y build-essential python3-dev libgit2-dev pkg-config
+        apt-get autoremove -y
+        apt-get clean
+        rm -rf /var/lib/apt/lists/*
+        echo "fooocus: build dependencies cleanup completed"
+    ) >${WORKSPACE}/logs/fooocus_cleanup.log 2>&1 &
+
     echo "fooocus: started on port 8010"
     echo "fooocus: log file at ${WORKSPACE}/logs/fooocus.log"
+    echo "fooocus: cleanup log at ${WORKSPACE}/logs/fooocus_cleanup.log"
 }
 
 # Note: Function is called explicitly from start.sh
