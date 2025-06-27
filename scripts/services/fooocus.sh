@@ -73,10 +73,9 @@ function start_fooocus() {
     apt-get update -qq
     apt-get install -y -qq --no-install-recommends \
         build-essential \
-        python3-dev \
-        libgit2-dev \
-        pkg-config
+        python3-dev
     echo "fooocus: build dependencies installed - FooocusPlus will handle all Python packages"
+    echo "fooocus: (libgit2-dev, pkg-config, pygit2, and packaging already installed at build time)"
 
     # Step 2: Copy provision configs to workspace for user visibility and control
     echo "fooocus: setting up provision configs in workspace..."
@@ -173,7 +172,8 @@ EOF
         sleep 30  # Extra wait to ensure installation is complete
         
         echo "fooocus: cleaning up build dependencies..."
-        apt-get remove -y build-essential python3-dev libgit2-dev pkg-config
+        apt-get remove -y build-essential python3-dev
+        echo "fooocus: (keeping libgit2-dev, pkg-config for pygit2 compatibility)"
         apt-get autoremove -y
         apt-get clean
         rm -rf /var/lib/apt/lists/*

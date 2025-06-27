@@ -81,9 +81,8 @@ RUN uv venv --seed --python 3.10 .venv && \
     source .venv/bin/activate && \
     # Only install essential system packages needed for pip to function
     pip install --upgrade pip==25.1.1 && \
-    pip install setuptools wheel packaging && \
-    # Clean up build dependencies but keep what's needed for runtime package compilation
-    apt-get remove -y libgit2-dev pkg-config && \
+    pip install setuptools wheel packaging pygit2 && \
+    # Keep libgit2-dev and pkg-config since pygit2 was installed at build time
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
