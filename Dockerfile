@@ -75,13 +75,18 @@ RUN git clone https://github.com/codechips/FooocusPlus.git fooocus
 
 WORKDIR /opt/fooocus
 
-# Create Python environment with uv (fast) but defer package installation to runtime
+# Create Python environment with uv (fast) and pre-install all packages
 # hadolint ignore=SC2015,DL3013
 RUN uv venv --seed --python 3.10 .venv && \
     source .venv/bin/activate && \
-    # Only install essential system packages needed for pip to function
+    # Install essential system packages needed for pip to function
     pip install --upgrade pip==25.1.1 && \
     pip install setuptools wheel packaging pygit2 && \
+    # Pre-install all FooocusPlus requirements at build time
+    echo "Pre-installing FooocusPlus requirements..." && \
+    pip install -r requirements.txt && \
+    pip install -r requirements_system.txt && \
+    echo "✓ All packages pre-installed at build time" && \
     # Keep libgit2-dev and pkg-config since pygit2 was installed at build time
     apt-get autoremove -y && \
     apt-get clean && \
@@ -123,7 +128,8 @@ ENV USERNAME=admin \
     PASSWORD=fooocus \
     WORKSPACE=/workspace \
     FOOOCUS_ARGS="" \
-    FOOOCUS_NO_AUTO_UPDATE="" \
+    FOOOCUS_AUTO_UPDATE="" \
+    SKIP_REQUIREMENTS_INSTALL=True \
     NO_ACCELERATE="" \
     OPEN_BUTTON_PORT=80
 

@@ -24,14 +24,14 @@ function provision_models() {
             echo "fooocus: [Provisioning] downloading models in parallel..."
 
             # Download essential models first
-            if uv run provision.py --config "${WORKSPACE}/provision/essential.toml"; then
+            if uv run provision.py "${WORKSPACE}/provision/essential.toml"; then
                 echo "fooocus: [Provisioning] essential models downloaded successfully"
             else
                 echo "fooocus: [Provisioning] WARNING: essential models download failed"
             fi
 
             # Download all models in parallel
-            if uv run provision.py --config "${WORKSPACE}/provision/models.toml"; then
+            if uv run provision.py "${WORKSPACE}/provision/models.toml"; then
                 echo "fooocus: [Provisioning] all models downloaded successfully"
 
                 # List what was downloaded
@@ -97,7 +97,7 @@ function start_fooocus() {
 
         # Download essential models first (prevents CLIP startup errors)
         echo "fooocus: downloading essential models..."
-        uv run provision.py --config "${WORKSPACE}/provision/essential.toml" || echo "Warning: Essential model download failed"
+        uv run provision.py "${WORKSPACE}/provision/essential.toml" || echo "Warning: Essential model download failed"
 
         # Run model provisioning (download all models in parallel)
         provision_models
@@ -143,13 +143,13 @@ EOF
     # Combine default args with any custom args
     FULL_ARGS="${DEFAULT_ARGS} ${FOOOCUS_ARGS}"
 
-    # Determine entry point based on auto-update setting (default: true)
-    if [[ "${FOOOCUS_NO_AUTO_UPDATE}" == "True" ]] || [[ "${FOOOCUS_NO_AUTO_UPDATE}" == "true" ]]; then
-        ENTRY_POINT="entry_without_update.py"
-        echo "fooocus: auto-update disabled, using entry_without_update.py"
-    else
+    # Determine entry point based on auto-update setting (default: disabled for faster startup)
+    if [[ "${FOOOCUS_AUTO_UPDATE}" == "True" ]] || [[ "${FOOOCUS_AUTO_UPDATE}" == "true" ]]; then
         ENTRY_POINT="entry_with_update.py"
         echo "fooocus: auto-update enabled, using entry_with_update.py"
+    else
+        ENTRY_POINT="entry_without_update.py"
+        echo "fooocus: auto-update disabled (default), using entry_without_update.py"
     fi
 
     # Prepare TCMalloc for better memory performance
