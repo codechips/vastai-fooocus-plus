@@ -4,58 +4,78 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/utils.sh"
 
-function start_fooocus() {
-    echo "fooocus: starting Fooocus Plus"
+function install_supportpack() {
+    local SUPPORTPACK_MARKER="/opt/fooocus/.supportpack_installed"
     
-    # Activate the uv-created virtual environment first
-    source /opt/fooocus/.venv/bin/activate
-    
-    # Change to the Fooocus directory (required for proper operation)
-    cd /opt/fooocus
-    
-    # Install SupportPack in background on first run
-    SUPPORTPACK_MARKER="/opt/fooocus/.supportpack_installed"
     if [[ ! -f "${SUPPORTPACK_MARKER}" ]] && [[ ! -f "/opt/fooocus/.supportpack_installing" ]]; then
         echo "fooocus: starting SupportPack installation in background..."
         echo "fooocus: this is a one-time 26GB download and may take several minutes"
-        
+
         # Create installing marker to prevent duplicate runs
         touch /opt/fooocus/.supportpack_installing
-        
+
         # Run SupportPack installation in background
         (
             # Install huggingface-hub for downloading
             echo "fooocus: [SupportPack] installing huggingface-hub..."
             pip install "huggingface-hub>=0.29.3" --quiet
-            
+
             # Download SupportPack.7z from HuggingFace
-            echo "fooocus: [SupportPack] downloading SupportPack.7z (26GB)..."
+            echo "fooocus: [SupportPack] downloading SupportPack.7z"
             huggingface-cli download --local-dir /opt/fooocus DavidDragonsage/FooocusPlus SupportPack.7z
-            
+
             # Extract SupportPack using native 7z command
             echo "fooocus: [SupportPack] extracting SupportPack.7z..."
-            cd /opt/fooocus && 7z x -y SupportPack.7z
+            cd /opt/fooocus
             
-            # Move UserDir models to workspace if extracted there
-            if [[ -d "/opt/fooocus/UserDir/models" ]]; then
-                echo "fooocus: [SupportPack] moving models to workspace..."
-                # Create workspace models directory if it doesn't exist
-                mkdir -p ${WORKSPACE}/fooocus/models
-                # Move all model subdirectories to workspace
-                cp -r /opt/fooocus/UserDir/models/* ${WORKSPACE}/fooocus/models/ 2>/dev/null || true
-                # Clean up UserDir
-                rm -rf /opt/fooocus/UserDir
+            # Check if 7z file exists and extract
+            if [[ -f "SupportPack.7z" ]]; then
+                echo "fooocus: [SupportPack] SupportPack.7z found ($(du -h SupportPack.7z | cut -f1))"
+                
+                # Extract with error checking
+                if 7z x -y SupportPack.7z; then
+                    echo "fooocus: [SupportPack] extraction successful"
+                    
+                    # List what was extracted using tree for better visualization
+                    echo "fooocus: [SupportPack] extracted contents:"
+                    tree -L 3 /opt/fooocus/ 2>/dev/null | head -30 || ls -la /opt/fooocus/
+                    
+                    # Move UserDir models to workspace if extracted there
+                    if [[ -d "/opt/fooocus/UserDir/models" ]]; then
+                        echo "fooocus: [SupportPack] moving models from UserDir to workspace..."
+                        # Create workspace models directory if it doesn't exist
+                        mkdir -p ${WORKSPACE}/fooocus/models
+                        # Move all model subdirectories to workspace
+                        cp -r /opt/fooocus/UserDir/models/* ${WORKSPACE}/fooocus/models/ 2>/dev/null || true
+                        echo "fooocus: [SupportPack] moved models to ${WORKSPACE}/fooocus/models/"
+                        tree -L 2 ${WORKSPACE}/fooocus/models/ 2>/dev/null | head -20 || ls -la ${WORKSPACE}/fooocus/models/
+                        # Clean up UserDir
+                        rm -rf /opt/fooocus/UserDir
+                    else
+                        echo "fooocus: [SupportPack] no UserDir/models found, checking for direct model files..."
+                        find /opt/fooocus -name "*.safetensors" -o -name "*.ckpt" -o -name "*.bin" | head -10
+                    fi
+                    
+                    # Clean up the archive to save space
+                    rm -f /opt/fooocus/SupportPack.7z
+                    echo "fooocus: [SupportPack] cleaned up archive file"
+                    
+                    # Clean up installing marker and create completion marker
+                    rm -f /opt/fooocus/.supportpack_installing
+                    touch "${SUPPORTPACK_MARKER}"
+                    echo "fooocus: [SupportPack] installation completed successfully"
+                else
+                    echo "fooocus: [SupportPack] ERROR: extraction failed!"
+                    rm -f /opt/fooocus/.supportpack_installing
+                    exit 1
+                fi
+            else
+                echo "fooocus: [SupportPack] ERROR: SupportPack.7z not found after download!"
+                rm -f /opt/fooocus/.supportpack_installing
+                exit 1
             fi
-            
-            # Clean up the archive to save space
-            rm -f /opt/fooocus/SupportPack.7z
-            
-            # Clean up installing marker and create completion marker
-            rm -f /opt/fooocus/.supportpack_installing
-            touch "${SUPPORTPACK_MARKER}"
-            echo "fooocus: [SupportPack] installation completed successfully"
         ) > ${WORKSPACE}/logs/supportpack_install.log 2>&1 &
-        
+
         echo "fooocus: SupportPack installation running in background"
         echo "fooocus: check ${WORKSPACE}/logs/supportpack_install.log for progress"
     elif [[ -f "/opt/fooocus/.supportpack_installing" ]]; then
@@ -63,17 +83,44 @@ function start_fooocus() {
     else
         echo "fooocus: SupportPack already installed (found marker file)"
     fi
-    
-    # Let FooocusPlus handle its own package installations with standard pip
+}
 
-    # Default Fooocus Plus arguments
+function start_fooocus() {
+    echo "fooocus: starting Fooocus Plus"
+
+    # Activate the uv-created virtual environment first
+    source /opt/fooocus/.venv/bin/activate
+
+    # Change to the Fooocus directory (required for proper operation)
+    cd /opt/fooocus
+
+    # Install SupportPack in background on first run
+    install_supportpack
+
+    pip install -r requirements_patch.txt
+    # Fix package version conflicts for gradio compatibility and add missing dependencies
+    echo "fooocus: fixing package version conflicts and installing missing dependencies..."
+    pip install --force-reinstall \
+        "gradio-client==0.5.0" \
+        "MarkupSafe>=2.0,<3.0" \
+        "pillow>=8.0,<11.0" \
+        "websockets>=10.0,<12.0" \
+        "pooch" \
+        "supervision" \
+        "addict" \
+        "yapf" \
+        "trampoline" --quiet
+    
+    # Upgrade transformers separately (as per manual install requirements)
+    pip install --upgrade transformers --quiet
+
     # Fooocus Plus uses port 7865 by default, we'll override to 8010 to match expected port
     DEFAULT_ARGS="--listen --port 8010 --disable-in-browser --theme dark --models-root ${WORKSPACE}/fooocus/models"
 
     # Enable FooocusPlus built-in authentication using auth.json
     if [[ ${USERNAME} ]] && [[ ${PASSWORD} ]]; then
         echo "fooocus: enabling built-in authentication for user: ${USERNAME}"
-        
+
         # Create auth.json file for FooocusPlus authentication
         cat > auth.json << EOF
 [
@@ -83,13 +130,13 @@ function start_fooocus() {
   }
 ]
 EOF
-        
+
         # Patch webui.py to enable authentication in gr.Blocks()
         if ! grep -q "auth=check_auth" webui.py; then
             echo "fooocus: patching webui.py to enable authentication"
             sed -i 's/common\.GRADIO_ROOT = gr\.Blocks(/common.GRADIO_ROOT = gr.Blocks(auth=check_auth if auth_enabled else None, /' webui.py
         fi
-        
+
         # Patch webui.py to allow external access (change 127.0.0.1 to 0.0.0.0)
         if grep -q 'server_name="127.0.0.1"' webui.py; then
             echo "fooocus: enabling external access (0.0.0.0)"

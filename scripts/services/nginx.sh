@@ -33,6 +33,22 @@ function start_nginx() {
     # Replace template variables in fooocus.html
     sed -i "s/{{FOOOCUS_PORT}}/${FOOOCUS_PORT}/g" /opt/nginx/html/fooocus.html
 
+    # Add build information to HTML templates
+    echo "nginx: adding build information to HTML templates"
+    BUILD_DATE=$(cat /root/BUILDTIME.txt 2>/dev/null || echo "unknown")
+    BUILD_SHA=$(cat /root/BUILD_SHA.txt 2>/dev/null || echo "unknown")
+    SHORT_SHA=${BUILD_SHA:0:7}
+    
+    # Update index.html footer with build information
+    sed -i '/<div class="footer">/,/<\/div>/{
+        /<div class="footer">/c\
+        <div class="footer">\
+            <span style="font-family: monospace;">'${SHORT_SHA}'</span> • '${BUILD_DATE}' • another joint by <a href="http://codechips.me" target="_blank">@codechips</a>\
+        </div>
+        /<\/div>/d
+    }' /opt/nginx/html/index.html
+    
+
     # Configure nginx for minimal resource usage
     # CRITICAL: Force only 1-2 workers regardless of CPU count
     # - worker_processes: number of worker processes (1 = minimal, 2 = balanced)
