@@ -24,14 +24,14 @@ function provision_models() {
             echo "fooocus: [Provisioning] downloading models in parallel..."
             
             # Download essential models first
-            if python provision.py --config "${WORKSPACE}/provision/essential.toml"; then
+            if uv run provision.py --config "${WORKSPACE}/provision/essential.toml"; then
                 echo "fooocus: [Provisioning] essential models downloaded successfully"
             else
                 echo "fooocus: [Provisioning] WARNING: essential models download failed"
             fi
             
             # Download all models in parallel
-            if python provision.py --config "${WORKSPACE}/provision/models.toml"; then
+            if uv run provision.py --config "${WORKSPACE}/provision/models.toml"; then
                 echo "fooocus: [Provisioning] all models downloaded successfully"
                 
                 # List what was downloaded
@@ -76,6 +76,8 @@ function start_fooocus() {
         python3-dev
     echo "fooocus: build dependencies installed - FooocusPlus will handle all Python packages"
     echo "fooocus: (libgit2-dev, pkg-config, pygit2, and packaging already installed at build time)"
+    
+    echo "fooocus: package patches will be applied after FooocusPlus completes its installation"
 
     # Step 2: Copy provision configs to workspace for user visibility and control
     echo "fooocus: setting up provision configs in workspace..."
@@ -95,7 +97,7 @@ function start_fooocus() {
         
         # Download essential models first (prevents CLIP startup errors)
         echo "fooocus: downloading essential models..."
-        python provision.py --config "${WORKSPACE}/provision/essential.toml" || echo "Warning: Essential model download failed"
+        uv run provision.py --config "${WORKSPACE}/provision/essential.toml" || echo "Warning: Essential model download failed"
         
         # Run model provisioning (download all models in parallel)
         provision_models
@@ -163,13 +165,16 @@ EOF
     fi
 
     # Clean up build dependencies after FooocusPlus starts (background task)
-    echo "fooocus: starting background cleanup of build dependencies..."
+    echo "fooocus: starting background cleanup and dependency patching..."
     (
         # Wait for FooocusPlus to complete package installation (check log for completion)
         while ! grep -q "All requirements met" ${WORKSPACE}/logs/fooocus.log 2>/dev/null; do
             sleep 10
         done
         sleep 30  # Extra wait to ensure installation is complete
+        
+        echo "fooocus: FooocusPlus package installation completed"
+        echo "fooocus: dependency patches no longer needed (fixed upstream in FooocusPlus fork)"
         
         echo "fooocus: cleaning up build dependencies..."
         apt-get remove -y build-essential python3-dev
