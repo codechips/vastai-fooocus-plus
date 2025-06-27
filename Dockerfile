@@ -71,7 +71,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh |
 
 # Clone Fooocus Plus (version-dependent layer)
 WORKDIR /opt
-RUN git clone git@github.com:codechips/FooocusPlus.git fooocus
+RUN git clone https://github.com/codechips/FooocusPlus.git fooocus
 
 WORKDIR /opt/fooocus
 
