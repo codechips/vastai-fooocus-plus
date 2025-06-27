@@ -183,7 +183,13 @@ class ProvisioningSystem:
 
         # Process each model category
         for category, models in config.get("models", {}).items():
-            target_dir = self.models_dir / self._get_category_dir(category)
+            category_path = self._get_category_dir(category)
+            
+            # Handle absolute paths (like fooocus_builtin)
+            if category_path.startswith('/'):
+                target_dir = Path(category_path)
+            else:
+                target_dir = self.models_dir / category_path
 
             if not self.dry_run:
                 target_dir.mkdir(parents=True, exist_ok=True)
@@ -247,7 +253,7 @@ class ProvisioningSystem:
             "upscale": "upscale_models",
             "upscale_models": "upscale_models",
             # Special categories
-            "fooocus_builtin": "../fooocus/models/clip_vision",
+            "fooocus_builtin": "/opt/fooocus/models/clip_vision",
             "insightface": "insightface/models/antelopev2",
         }
         return category_mapping.get(category, category)
