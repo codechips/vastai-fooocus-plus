@@ -6,9 +6,9 @@ source "$SCRIPT_DIR/utils.sh"
 
 function provision_models() {
     # Internal model provisioning - downloads essential FooocusPlus models
-    # This is separate from external provisioning (PROVISION_URL) which runs earlier
+    # Separate from external provisioning (PROVISION_URL) which runs earlier
     local PROVISION_MARKER="/opt/fooocus/.models_provisioned"
-    
+
     if [[ ! -f "${PROVISION_MARKER}" ]] && [[ ! -f "/opt/fooocus/.models_provisioning" ]]; then
         echo "fooocus: starting internal model provisioning via parallel downloads..."
         echo "fooocus: downloading all essential FooocusPlus models"
@@ -20,24 +20,24 @@ function provision_models() {
         (
             # Navigate to provision directory
             cd /opt/provision || exit 1
-            
+
             echo "fooocus: [Provisioning] downloading models in parallel..."
-            
+
             # Download essential models first
             if uv run provision.py --config "${WORKSPACE}/provision/essential.toml"; then
                 echo "fooocus: [Provisioning] essential models downloaded successfully"
             else
                 echo "fooocus: [Provisioning] WARNING: essential models download failed"
             fi
-            
+
             # Download all models in parallel
             if uv run provision.py --config "${WORKSPACE}/provision/models.toml"; then
                 echo "fooocus: [Provisioning] all models downloaded successfully"
-                
+
                 # List what was downloaded
                 echo "fooocus: [Provisioning] downloaded models:"
                 tree -L 3 ${WORKSPACE}/fooocus/models/ 2>/dev/null | head -50 || ls -la ${WORKSPACE}/fooocus/models/
-                
+
                 # Clean up provisioning marker and create completion marker
                 rm -f /opt/fooocus/.models_provisioning
                 touch "${PROVISION_MARKER}"
@@ -47,7 +47,7 @@ function provision_models() {
                 rm -f /opt/fooocus/.models_provisioning
                 exit 1
             fi
-            
+
         ) > ${WORKSPACE}/logs/provisioning.log 2>&1 &
 
         echo "fooocus: model provisioning running in background (parallel downloads)"
@@ -76,7 +76,7 @@ function start_fooocus() {
         python3-dev
     echo "fooocus: build dependencies installed - FooocusPlus will handle all Python packages"
     echo "fooocus: (libgit2-dev, pkg-config, pygit2, and packaging already installed at build time)"
-    
+
     echo "fooocus: package patches will be applied after FooocusPlus completes its installation"
 
     # Step 2: Copy provision configs to workspace for user visibility and control
@@ -94,14 +94,14 @@ function start_fooocus() {
     echo "fooocus: provisioning models before FooocusPlus startup..."
     if [ -f "/opt/provision/provision.py" ]; then
         cd /opt/provision
-        
+
         # Download essential models first (prevents CLIP startup errors)
         echo "fooocus: downloading essential models..."
         uv run provision.py --config "${WORKSPACE}/provision/essential.toml" || echo "Warning: Essential model download failed"
-        
+
         # Run model provisioning (download all models in parallel)
         provision_models
-        
+
         cd /opt/fooocus
     else
         echo "fooocus: provision script not found, skipping model download"
@@ -172,10 +172,10 @@ EOF
             sleep 10
         done
         sleep 30  # Extra wait to ensure installation is complete
-        
+
         echo "fooocus: FooocusPlus package installation completed"
         echo "fooocus: dependency patches no longer needed (fixed upstream in FooocusPlus fork)"
-        
+
         echo "fooocus: cleaning up build dependencies..."
         apt-get remove -y build-essential python3-dev
         echo "fooocus: (keeping libgit2-dev, pkg-config for pygit2 compatibility)"
