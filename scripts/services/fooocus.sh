@@ -26,7 +26,7 @@ function start_fooocus() {
         (
             # Install huggingface-hub for downloading
             echo "fooocus: [SupportPack] installing huggingface-hub..."
-            uv pip install "huggingface-hub>=0.29.3" --quiet
+            pip install "huggingface-hub>=0.29.3" --quiet
             
             # Download SupportPack.7z from HuggingFace
             echo "fooocus: [SupportPack] downloading SupportPack.7z (26GB)..."
@@ -64,34 +64,7 @@ function start_fooocus() {
         echo "fooocus: SupportPack already installed (found marker file)"
     fi
     
-    # Skip gradio installation - it's already installed from requirements_versions.txt during Docker build
-    
-    # Patch FooocusPlus to use fast uv installer instead of slow pip
-    echo "fooocus: patching launch_util.py to use uv instead of pip for faster installs"
-    if ! grep -q "uv pip" modules/launch_util.py; then
-        # Backup original file
-        cp modules/launch_util.py modules/launch_util.py.backup
-        
-        # Replace 'python -m pip' with 'uv pip' for much faster package installation
-        sed -i 's/"{python}" -m pip/uv pip/g' modules/launch_util.py
-        
-        # Fix uv pip command differences:
-        # 1. uninstall -y → uninstall (uv doesn't need/support -y flag)
-        sed -i 's/uv pip uninstall -y/uv pip uninstall/g' modules/launch_util.py
-        
-        # 2. Remove --disable-pip-version-check (not supported by uv)
-        sed -i 's/ --disable-pip-version-check//g' modules/launch_util.py
-        
-        # 3. install -U -I → install --upgrade --force-reinstall
-        sed -i 's/install -U -I/install --upgrade --force-reinstall/g' modules/launch_util.py
-        
-        # 4. Replace --prefer-binary with --only-binary :all: (uv equivalent)
-        sed -i 's/--prefer-binary/--only-binary :all:/g' modules/launch_util.py
-        
-        echo "fooocus: successfully patched launch_util.py to use uv (5-10x faster)"
-    else
-        echo "fooocus: launch_util.py already patched to use uv"
-    fi
+    # Let FooocusPlus handle its own package installations with standard pip
 
     # Default Fooocus Plus arguments
     # Fooocus Plus uses port 7865 by default, we'll override to 8010 to match expected port

@@ -48,10 +48,7 @@ RUN apt-get update && \
     # 7zip for SupportPack extraction
     p7zip-full \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    # Install uv (fastest Python package manager and environment manager)
-    && curl -LsSf https://astral.sh/uv/install.sh | bash \
-    && mv /root/.local/bin/uv /usr/local/bin/uv
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Install ttyd and logdy (architecture-aware)
@@ -74,9 +71,9 @@ RUN git clone https://github.com/DavidDragonsage/FooocusPlus.git fooocus
 
 WORKDIR /opt/fooocus
 
-# Create Python environment with uv (manages Python + packages)
+# Create Python environment with standard venv
 # hadolint ignore=SC2015,DL3013
-RUN uv venv --seed --python 3.10 .venv && \
+RUN python3 -m venv .venv && \
     # Activate the virtual environment
     . .venv/bin/activate && \
     # Follow FooocusPlus installation pattern (based on Linux install script)
