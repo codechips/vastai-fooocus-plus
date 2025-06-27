@@ -39,9 +39,18 @@ function start_nginx() {
     BUILD_SHA=$(cat /root/BUILD_SHA.txt 2>/dev/null || echo "unknown")
     SHORT_SHA=${BUILD_SHA:0:7}
     
+    # Create GitHub commit URL (assumes this repository)
+    GITHUB_REPO="https://github.com/im/vastai-fooocus-plus"
+    if [[ "${BUILD_SHA}" != "unknown" ]]; then
+        GITHUB_COMMIT_URL="${GITHUB_REPO}/commit/${BUILD_SHA}"
+    else
+        GITHUB_COMMIT_URL="${GITHUB_REPO}"
+    fi
+    
     # Replace placeholder variables in index.html footer
     sed -i "s/GIT_SHA/${SHORT_SHA}/g" /opt/nginx/html/index.html
     sed -i "s/BUILD_DATE/${BUILD_DATE}/g" /opt/nginx/html/index.html
+    sed -i "s|GITHUB_COMMIT_URL|${GITHUB_COMMIT_URL}|g" /opt/nginx/html/index.html
     
 
     # Configure nginx for minimal resource usage
